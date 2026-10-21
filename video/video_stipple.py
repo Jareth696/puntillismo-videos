@@ -62,7 +62,7 @@ def informe(info):
     malos = cortes + [i for i in luz if all(info[j]["luz"] for j in range(i, min(i + FPS//4, len(info))))]
     return sorted(malos)
 
-def leer_siguiendo(path, desde, dur, vel, info, margen=1.35, solo_principal=False):
+def leer_siguiendo(path, desde, dur, vel, info, margen=1.35, solo_principal=False, realzar=1.0):
     """Encuadre automático 9:16 sobre el objeto principal (ignora destellos): lo mantiene completo con margen.
     Si el objeto es más grande que el cuadro original, se agrega negro alrededor (se aleja la cámara)."""
     from PIL import Image
@@ -92,6 +92,17 @@ def leer_siguiendo(path, desde, dur, vel, info, margen=1.35, solo_principal=Fals
             if n > 1:
                 k = int(np.argmax(ndimage.sum(np.ones_like(out), lab, range(1, n+1)))) + 1
                 out = out*ndimage.binary_dilation(lab == k, iterations=6)
+        elif realzar > 1:                                               # objetos chicos fuera del principal: más brillo
+            from scipy import ndimage
+            lab, n = ndimage.label(out > 0.03)
+            if n > 1:
+                areas = ndimage.sum(np.ones_like(out), lab, range(1, n+1)); orden = np.argsort(areas)[::-1]
+                zona = ndimage.binary_dilation(ndimage.binary_fill_holes(lab == orden[0] + 1), iterations=8)
+                for k in orden[1:] + 1:
+                    comp = lab == k
+                    if 4 <= areas[k-1] < 0.003*out.size and out[comp].max() > 0.12 and not (zona & comp).any():
+                        m = ndimage.binary_dilation(comp, iterations=2)
+                        out[m] = np.clip(out[m]*realzar, 0, 1)
         yield out
 
 def pista_secundaria(path, desde, dur, vel, cortes="antes"):
@@ -201,6 +212,8 @@ def main():
                     help="antes = terminar antes del primer corte de escena o destello; ignorar = procesar todo")
     ap.add_argument("--solo-principal", dest="solo_principal", action="store_true",
                     help="dibuja solo el objeto principal (borra otros cuerpos y destellos)")
+    ap.add_argument("--realzar-secundarios", dest="realzar", type=float, default=1.0,
+                    help="multiplica el brillo de objetos chicos fuera del principal (p. ej. 2.5 para la Tierra)")
     ap.add_argument("--analizar", action="store_true", help="solo mostrar el informe del video, sin renderizar")
     ap.add_argument("--tono_min", type=float, default=0.55, help="brillo mínimo de un punto (1 = todos iguales)")
     a = ap.parse_args()
@@ -216,7 +229,7 @@ def main():
         if cortes and a.cortes == "antes":
             fin = max(cortes[0] - FPS//2, FPS); print(f"Termina antes del primer problema: {fin/FPS:.1f}s"); info = info[:fin]
             a.dur = len(info)/FPS
-    fuente = leer_siguiendo(a.entrada, a.desde, a.dur, a.vel, info, solo_principal=a.solo_principal) if a.seguir else leer_frames(a.entrada, a.desde, a.dur, a.centro)
+    fuente = leer_siguiendo(a.entrada, a.desde, a.dur, a.vel, info, solo_principal=a.solo_principal, realzar=a.realzar) if a.seguir else leer_frames(a.entrada, a.desde, a.dur, a.centro)
     nprev = None
     for f, g in enumerate(fuente):
         t = f/FPS; d = densidad(g, a); n = None

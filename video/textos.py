@@ -29,6 +29,7 @@ class Texto:
     dx: float = 0             # desplazamiento respecto del objeto seguido
     dy: float = -60
     pista: list = None        # posiciones (x, y) por cuadro calculadas desde el video original (más confiable)
+    anillo: float = 0         # radio de un anillo de puntos alrededor del objeto seguido (0 = sin anillo)
 
 def puntos_de_texto(t: Texto, densidad=0.55, seed=0):
     """Máscara del texto con espaciado amplio -> puntos (muestreo por la máscara, sin grumos)."""
@@ -94,6 +95,11 @@ def componer(entrada, salida, textos, crf=15):
                 if o: d["pos"] = o if d["pos"] is None else (d["pos"][0]*0.8 + o[0]*0.2, d["pos"][1]*0.8 + o[1]*0.2)
                 if d["pos"] is None: continue
                 cx, cy = d["pos"][0] + tx.dx, d["pos"][1] + tx.dy
+                if tx.anillo:                                           # marca: anillo fino de puntos que gira
+                    a = np.linspace(0, 2*np.pi, 70, endpoint=False) + t*0.6
+                    r = tx.anillo*(1.25 - 0.25*ss(tx.t0, tx.t0 + 0.8, t))
+                    e = ss(tx.t0, tx.t0 + 0.8, t)*(1 - ss(tx.t1, tx.t1 + 0.8, t))
+                    splat(capa, d["pos"][0] + r*np.cos(a), d["pos"][1] + r*np.sin(a), np.full(70, 0.9*e))
             ent = ss(0, 1, (t - tx.t0 - d["st"])/0.8)                   # se juntan
             sal = ss(0, 1, (t - tx.t1 + 0.2 - d["st"]*0.6)/0.9)          # se disuelven flotando
             q = d["p"] + d["dis"]*(1 - ent)[:, None] + np.c_[d["dis"][:, 0]*0.5, -d["sube"]]*sal[:, None]
