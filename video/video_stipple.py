@@ -182,7 +182,9 @@ class Stippler:
         for _ in range(iters):
             _, lab = cKDTree(self.pts).query(px, workers=-1)
             sw = np.bincount(lab, wt, self.n); sx = np.bincount(lab, wt*px[:, 0], self.n); sy = np.bincount(lab, wt*px[:, 1], self.n)
-            ok = sw > 1e-6; self.pts[ok] = np.c_[sx[ok]/sw[ok], sy[ok]/sw[ok]]
+            # un punto cuya celda casi no tiene luz (p. ej. quedó en una sombra que avanzó) se reubica donde hay luz
+            ok = sw > max(1e-6, 0.04*np.median(sw[sw > 0])) if (sw > 0).any() else sw > 1e-6
+            self.pts[ok] = np.c_[sx[ok]/sw[ok], sy[ok]/sw[ok]]
             if (~ok).any(): self.pts[~ok] = self.sample(d, (~ok).sum())
         # brillo de cada punto = densidad local (zonas tenues -> puntos tenues)
         ix = np.clip(self.pts[:, 0].astype(int), 0, d.shape[1]-1); iy = np.clip(self.pts[:, 1].astype(int), 0, d.shape[0]-1)
