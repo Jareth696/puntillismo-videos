@@ -8,14 +8,33 @@ from scipy.spatial import cKDTree
 W, H, FPS = 1080, 1920, 24
 K = 2                                           # el mapa de densidad se calcula a 1/K de resolución
 
-def _crudo(path, desde, dur, vel, w, h):
-    vf = f"setpts=PTS/{vel},fps={FPS},scale={w}:{h},format=gray"
-    p = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-ss", str(desde), "-t", str(dur*vel), "-i", path, "-vf", vf,
-                          "-f", "rawvideo", "-"], stdout=subprocess.PIPE)
+CANAL = "luz"                                  # qué "ve" el motor: luz | calidos | verdes | saturacion
+
+def canal(rgb):
+    """Imagen 0..1 según el canal elegido (rgb: h x w x 3 en 0..1)."""
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    if CANAL == "calidos":    v = np.clip((r - b)*1.6 + 0.15*(r - g), 0, 1)*np.clip(r*1.4, 0, 1)   # naranjas, rojos, amarillos
+    elif CANAL == "verdes":   v = np.clip((g - (r + b)/2)*2.8, 0, 1)*np.clip(g*1.5, 0, 1)
+    elif CANAL == "saturacion":
+        mx, mn = rgb.max(-1), rgb.min(-1); v = (mx - mn)/np.maximum(mx, 1e-3)*mx
+    else:                     return 0.299*r + 0.587*g + 0.114*b
+    # el color decide DÓNDE van los puntos (máscara); la luz aporta el DETALLE adentro (nervaduras, sombras)
+    luz = 0.299*r + 0.587*g + 0.114*b
+    m = np.clip(v*2.2, 0, 1)
+    return m*(0.3 + 0.7*np.clip(luz/max(np.percentile(luz[m > 0.5], 95) if (m > 0.5).any() else 1, 0.05), 0, 1))
+
+def _leer(cmd, w, h):
+    c = 1 if CANAL == "luz" else 3
+    p = subprocess.Popen(cmd + ["-pix_fmt", "gray" if c == 1 else "rgb24", "-f", "rawvideo", "-"], stdout=subprocess.PIPE)
     while True:
-        b = p.stdout.read(w*h)
-        if len(b) < w*h: break
-        yield np.frombuffer(b, np.uint8).reshape(h, w).astype(float)/255
+        b = p.stdout.read(w*h*c)
+        if len(b) < w*h*c: break
+        a = np.frombuffer(b, np.uint8).astype(float)/255
+        yield a.reshape(h, w) if c == 1 else canal(a.reshape(h, w, 3))
+
+def _crudo(path, desde, dur, vel, w, h):
+    vf = f"setpts=PTS/{vel},fps={FPS},scale={w}:{h}"
+    yield from _leer(["ffmpeg", "-loglevel", "error", "-ss", str(desde), "-t", str(dur*vel), "-i", path, "-vf", vf], w, h)
 
 def analizar(path, desde, dur, vel, umbral=0.10, sw=320, sh=180):
     """Recorre el video a baja resolución y devuelve, por cuadro: caja del objeto principal (la región brillante
@@ -128,14 +147,8 @@ def pista_secundaria(path, desde, dur, vel, cortes="antes"):
 
 def leer_frames(path, desde, dur, cx):
     """ffmpeg: recorte vertical 9:16 (cx = centro horizontal 0..1), escala a W/K x H/K, gris."""
-    vf = f"crop=ih*9/16:ih:(iw-ih*9/16)*{cx}:0,scale={W//K}:{H//K},fps={FPS},format=gray"
-    p = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-ss", str(desde), "-t", str(dur), "-i", path, "-vf", vf,
-                          "-f", "rawvideo", "-"], stdout=subprocess.PIPE)
-    n = (W//K)*(H//K)
-    while True:
-        b = p.stdout.read(n)
-        if len(b) < n: break
-        yield np.frombuffer(b, np.uint8).reshape(H//K, W//K).astype(float)/255
+    vf = f"crop=min(iw\\,ih*9/16):ih:(iw-min(iw\\,ih*9/16))*{cx}:0,scale={W//K}:{H//K},fps={FPS}"
+    yield from _leer(["ffmpeg", "-loglevel", "error", "-ss", str(desde), "-t", str(dur), "-i", path, "-vf", vf], W//K, H//K)
 
 def blur(b):
     o = b.copy(); o[:, 1:-1] = (b[:, :-2] + 2*b[:, 1:-1] + b[:, 2:])/4
@@ -223,9 +236,12 @@ def main():
                     help="dibuja solo el objeto principal (borra otros cuerpos y destellos)")
     ap.add_argument("--realzar-secundarios", dest="realzar", type=float, default=1.0,
                     help="multiplica el brillo de objetos chicos fuera del principal (p. ej. 2.5 para la Tierra)")
+    ap.add_argument("--canal", choices=["luz", "calidos", "verdes", "saturacion"], default="luz",
+                    help="qué resalta el motor: luz (brillo), calidos (naranjas/rojos), verdes, saturacion (lo colorido)")
     ap.add_argument("--analizar", action="store_true", help="solo mostrar el informe del video, sin renderizar")
     ap.add_argument("--tono_min", type=float, default=0.55, help="brillo mínimo de un punto (1 = todos iguales)")
     a = ap.parse_args()
+    global CANAL; CANAL = a.canal
     rng = np.random.default_rng(1); MX = a.puntos; big = rng.uniform(size=MX) < 0.2; tw = rng.uniform(0, 6.28, MX)
     sx, sy = rng.uniform(0, W, a.estrellas), rng.uniform(0, H, a.estrellas); sb = rng.uniform(.15, .7, a.estrellas)**2; sp = rng.uniform(0, 6.28, a.estrellas)
     st = Stippler(a.puntos, H//K, W//K)
