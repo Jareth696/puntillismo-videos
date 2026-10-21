@@ -1,4 +1,12 @@
-# Guía de estilo (aprobada con `videos/luna_8_fases.mp4`)
+# Guía de estilo (aprobada con `videos/luna_8_fases.mp4` y `videos/hoja_viento.mp4`)
+
+## Resumen: así funciona el motor
+1. **Entrada:** puntos dispersos que se juntan rápido y forman el elemento, mientras se forma el texto de contexto.
+2. **Un solo plano:** nada de viajar entre escenarios. El movimiento sale de **cambiar la vista del mismo plano**
+   (girar o inclinar el elemento, la luz que cambia como en las fases) y de **elementos que entran**
+   (viento, lluvia, suelo, etiquetas) o que se transforman en otros.
+3. **Ritmo rápido:** transiciones ágiles, salidas cortas, el remate llega antes de que la gente deslice.
+4. **Fondo negro, puntos blancos** (Matrix verde solo para temas digitales).
 
 Los valores exactos están en `video/estilo.py`. Todo script nuevo debe importarlo (`import estilo as E`).
 
