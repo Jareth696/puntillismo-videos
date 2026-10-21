@@ -29,6 +29,7 @@ def cargar_textura(path=os.path.join(os.path.dirname(__file__), "src", "luna_lle
 TEX = cargar_textura(); TN = TEX.shape[0]
 
 # ---------- iluminación de una fase ----------
+CONTRASTE_BASE = 0.24                                   # 0 = textura original (mares muy oscuros), 0.38 = muy suave
 yy, xx = np.mgrid[0:GH, 0:GW]
 def luna(phi, escala=1.0, luz=1.0, ceniza=0.035):
     """phi: 0 = nueva, pi/2 = cuarto creciente, pi = llena, 3pi/2 = cuarto menguante (hemisferio norte)."""
@@ -40,7 +41,7 @@ def luna(phi, escala=1.0, luz=1.0, ceniza=0.035):
     mu0 = x*L[0] + z*L[2]                                 # coseno del ángulo con el Sol
     dia = ss(-0.03, 0.12, mu0)*(0.45 + 0.55*np.sqrt(np.clip(mu0, 0, 1)))
     u = np.clip(((x + 1)/2*TN).astype(int), 0, TN-1); v = np.clip(((y + 1)/2*TN).astype(int), 0, TN-1)
-    alb = 0.38 + 0.62*TEX[v, u]                           # contraste suave: los mares se notan sin dejar huecos
+    alb = CONTRASTE_BASE + (1 - CONTRASTE_BASE)*TEX[v, u]  # contraste intermedio: los mares se notan sin dejar huecos
     img = alb*(luz*dia + ceniza*(1 - ss(-0.03, 0.12, mu0)))   # luz cenicienta en la parte oscura
     borde = ss(1.0, 0.985, np.sqrt(rr2))                   # borde suave del disco
     return np.where(dentro, img*borde, 0.0)
@@ -50,8 +51,9 @@ FASES = ["LUNA NUEVA", "CRECIENTE", "CUARTO CRECIENTE", "GIBOSA CRECIENTE",
          "LUNA LLENA", "GIBOSA MENGUANTE", "CUARTO MENGUANTE", "MENGUANTE"]
 T_GANCHO, T_APAGA, T_CICLO = 0.3, 4.9, 6.4             # nace la Luna / se apaga hacia la nueva / empieza el ciclo
 SEG, QUIETO = 3.8, 1.4                                  # duración de cada fase / tiempo quieta en cada una
-T_FIN_CICLO = T_CICLO + 8*SEG
-DUR = T_FIN_CICLO + 6.4
+SEG_ULT, QUIETO_ULT = 2.2, 1.0                          # la última fase cierra rápido hacia el remate
+T_FIN_CICLO = T_CICLO + 7*SEG + SEG_ULT
+DUR = T_FIN_CICLO + 4.6
 
 def estado(t):
     """(phi, escala, luz, indice de fase o None)."""
@@ -60,9 +62,10 @@ def estado(t):
     if t < T_CICLO:                                       # la luz se apaga: queda la luz cenicienta
         return np.pi, 1.0, 1 - ss(T_APAGA, T_CICLO - 0.2, t), None
     if t < T_FIN_CICLO:
-        k = int((t - T_CICLO)//SEG); tt = (t - T_CICLO) - k*SEG
-        return k*np.pi/4 + np.pi/4*ss(QUIETO, SEG, tt), 1.0, 1.0, k
-    return np.pi, 1.0, ss(T_FIN_CICLO + 0.2, T_FIN_CICLO + 2.6, t), None    # se vuelve a formar la Luna llena
+        k = min(int((t - T_CICLO)//SEG), 7); tt = (t - T_CICLO) - k*SEG
+        q, s_ = (QUIETO, SEG) if k < 7 else (QUIETO_ULT, SEG_ULT)
+        return k*np.pi/4 + np.pi/4*ss(q, s_, tt), 1.0, 1.0, k
+    return np.pi, 1.0, ss(T_FIN_CICLO, T_FIN_CICLO + 1.3, t), None          # se vuelve a formar la Luna llena
 
 def textos():
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "video"))
@@ -70,9 +73,9 @@ def textos():
     T = [Texto("¿SABÍAS QUE LA LUNA", 0.5, 4.4, y=230, tam=42), Texto("TIENE 8 FASES?", 1.1, 4.6, y=295, tam=42)]
     for k, nombre in enumerate(FASES):
         t0 = T_CICLO + k*SEG - 0.1
-        T.append(Texto(nombre, t0, t0 + QUIETO + 0.9, y=1430, tam=34))
-    T += [Texto("UN CICLO COMPLETO", T_FIN_CICLO + 0.5, DUR - 1.4, y=230, tam=36),
-          Texto("DURA 29,5 DÍAS", T_FIN_CICLO + 1.1, DUR - 1.3, y=290, tam=36)]
+        T.append(Texto(nombre, t0, t0 + (QUIETO if k < 7 else QUIETO_ULT) + 0.6, y=1430, tam=34))
+    T += [Texto("UN CICLO COMPLETO", T_FIN_CICLO - 0.4, DUR - 1.3, y=230, tam=36),
+          Texto("DURA 29,5 DÍAS", T_FIN_CICLO + 0.1, DUR - 1.2, y=290, tam=36)]
     return T
 
 # ---------- render ----------
