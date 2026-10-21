@@ -17,18 +17,61 @@ def _crudo(path, desde, dur, vel, w, h):
         if len(b) < w*h: break
         yield np.frombuffer(b, np.uint8).reshape(h, w).astype(float)/255
 
-def leer_siguiendo(path, desde, dur, vel, margen=1.35, umbral=0.10):
-    """Encuadre automático 9:16: sigue al objeto brillante y ajusta el zoom para que entre completo con margen.
+def analizar(path, desde, dur, vel, umbral=0.10, sw=320, sh=180):
+    """Recorre el video a baja resolución y devuelve, por cuadro: caja del objeto principal (la región brillante
+    más grande), si hay destellos aparte, y los cortes de escena (cambios bruscos de imagen)."""
+    from scipy import ndimage
+    info, prev = [], None
+    for g in _crudo(path, desde, dur, vel, sw, sh):
+        lab, n = ndimage.label(g > umbral)
+        caja, destello, luz, area, centro = None, False, False, 0, None
+        if n:
+            areas = ndimage.sum(np.ones_like(g), lab, range(1, n+1)); k = int(np.argmax(areas)) + 1
+            if areas[k-1] > 20:
+                ys, xs = np.nonzero(lab == k); area = areas[k-1]
+                caja = (xs.min()/sw, xs.max()/sw, ys.min()/sh, ys.max()/sh); centro = (xs.mean()/sw, ys.mean()/sh)
+                luz = g[lab == k].mean() > 0.8 and area < 0.004*sw*sh       # el "objeto" es una fuente de luz (Sol, reflejo)
+                otros = [i+1 for i, a in enumerate(areas) if i+1 != k and a > 3]
+                destello = any(g[lab == i].max() > 0.85 for i in otros)
+        corte = prev is not None and np.abs(g - prev).mean() > 0.06 and \
+                abs(np.histogram(g, 16, (0, 1))[0] - np.histogram(prev, 16, (0, 1))[0]).sum() > 0.25*g.size
+        if info and area and info[-1]["area"]:                         # salto brusco del objeto principal
+            r = area/info[-1]["area"]; dc = np.hypot(centro[0]-info[-1]["centro"][0], centro[1]-info[-1]["centro"][1])
+            corte = corte or r > 3 or r < 1/3 or dc > 0.15
+        info.append(dict(caja=caja, destello=destello, luz=luz, corte=corte, area=area, centro=centro)); prev = g
+    return info
+
+def informe(info):
+    """Resumen legible: cortes, tramos sin objeto y destellos."""
+    t = lambda i: f"{i/FPS:5.1f}s"
+    cortes = [i for i, d in enumerate(info) if d["corte"]]
+    print("Cortes de escena:", ", ".join(t(i) for i in cortes) or "ninguno")
+    def tramos(cond):
+        out, ini = [], None
+        for i, d in enumerate(info + [None]):
+            c = d is not None and cond(d)
+            if c and ini is None: ini = i
+            if not c and ini is not None: out.append((ini, i)); ini = None
+        return out
+    for nombre, cond in (("Sin objeto", lambda d: d["caja"] is None), ("Destellos aparte", lambda d: d["destello"]),
+                         ("Fuente de luz como objeto (Sol/reflejo)", lambda d: d["luz"])):
+        tr = [(a, b) for a, b in tramos(cond) if b - a > FPS//4]
+        print(f"{nombre}:", ", ".join(f"{t(a)}-{t(b)}" for a, b in tr) or "ninguno")
+    luz = [i for i, d in enumerate(info) if d["luz"]]
+    # problemas que cortan el video: cortes de escena y tramos donde el "objeto" es solo un destello (> 1/4 s)
+    malos = cortes + [i for i in luz if all(info[j]["luz"] for j in range(i, min(i + FPS//4, len(info))))]
+    return sorted(malos)
+
+def leer_siguiendo(path, desde, dur, vel, info, margen=1.35):
+    """Encuadre automático 9:16 sobre el objeto principal (ignora destellos): lo mantiene completo con margen.
     Si el objeto es más grande que el cuadro original, se agrega negro alrededor (se aleja la cámara)."""
     from PIL import Image
-    sw, sh = 320, 180; cx, cy, hh = [], [], []
-    for g in _crudo(path, desde, dur, vel, sw, sh):
-        m = g > umbral
-        if m.sum() > 20:
-            ys, xs = np.nonzero(m)
-            x0, x1 = np.percentile(xs, [0.5, 99.5]); y0, y1 = np.percentile(ys, [0.5, 99.5])
-            cx.append((x0+x1)/2/sw); cy.append((y0+y1)/2/sh)
-            hh.append(max((y1-y0)/sh, (x1-x0)/sw*sw/sh*16/9)*margen)    # alto necesario (fracción del alto original)
+    cx, cy, hh = [], [], []
+    for d in info:
+        if d["caja"]:
+            x0, x1, y0, y1 = d["caja"]; sw_, sh_ = 320, 180
+            cx.append((x0+x1)/2); cy.append((y0+y1)/2)
+            hh.append(max(y1-y0, (x1-x0)*sw_/sh_*16/9)*margen)
         else:
             cx.append(cx[-1] if cx else .5); cy.append(cy[-1] if cy else .5); hh.append(hh[-1] if hh else 1.0)
     k = np.exp(-np.linspace(-3, 3, 49)**2/2); k /= k.sum()
@@ -36,9 +79,10 @@ def leer_siguiendo(path, desde, dur, vel, margen=1.35, umbral=0.10):
     cx, cy, hh = sm(cx), sm(cy), np.clip(sm(hh), 0.35, 3.0)
     SW, SH = 1280, 720
     for i, g in enumerate(_crudo(path, desde, dur, vel, SW, SH)):
+        if i >= len(info): break
         ch = hh[i]*SH; cw = ch*9/16
         x0 = cx[i]*SW - cw/2; y0 = cy[i]*SH - ch/2
-        if ch <= SH: y0 = np.clip(y0, 0, SH-ch)                        # sin salir del cuadro si cabe
+        if ch <= SH: y0 = np.clip(y0, 0, SH-ch)
         if cw <= SW: x0 = np.clip(x0, 0, SW-cw)
         im = Image.fromarray((g*255).astype(np.uint8))
         out = im.transform((W//K, H//K), Image.EXTENT, (x0, y0, x0+cw, y0+ch), Image.BICUBIC, fillcolor=0)
@@ -78,6 +122,7 @@ def densidad(g, a):
     gy, gx = np.gradient(blur(blur(g)))
     edge = np.clip(np.hypot(gx, gy)*a.bordes, 0, 1)
     d = np.clip((g - a.negro)/(1 - a.negro), 0, 1)**a.gamma + 0.35*edge
+    if (d > 1e-3).any(): d = np.minimum(d, np.percentile(d[d > 1e-3], 99))     # tope a destellos
     return d + 1e-5
 
 class Stippler:
@@ -125,6 +170,9 @@ def main():
     ap.add_argument("--vel", type=float, default=1.0, help="velocidad de reproducción")
     ap.add_argument("--variable", type=float, default=0, help="puntos por unidad de luz (0 = cantidad fija)")
     ap.add_argument("--estrellas", type=int, default=0)
+    ap.add_argument("--cortes", choices=["antes", "ignorar"], default="antes",
+                    help="antes = terminar antes del primer corte de escena o destello; ignorar = procesar todo")
+    ap.add_argument("--analizar", action="store_true", help="solo mostrar el informe del video, sin renderizar")
     ap.add_argument("--tono_min", type=float, default=0.55, help="brillo mínimo de un punto (1 = todos iguales)")
     a = ap.parse_args()
     rng = np.random.default_rng(1); MX = a.puntos; big = rng.uniform(size=MX) < 0.2; tw = rng.uniform(0, 6.28, MX)
@@ -133,7 +181,13 @@ def main():
     out = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "gray", "-s", f"{W}x{H}",
                             "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "15", a.salida], stdin=subprocess.PIPE)
     total = int(a.dur*FPS)
-    fuente = leer_siguiendo(a.entrada, a.desde, a.dur, a.vel) if a.seguir else leer_frames(a.entrada, a.desde, a.dur, a.centro)
+    if a.seguir or a.analizar:
+        info = analizar(a.entrada, a.desde, a.dur, a.vel); cortes = informe(info)
+        if a.analizar: return
+        if cortes and a.cortes == "antes":
+            fin = max(cortes[0] - FPS//2, FPS); print(f"Termina antes del primer problema: {fin/FPS:.1f}s"); info = info[:fin]
+            a.dur = len(info)/FPS
+    fuente = leer_siguiendo(a.entrada, a.desde, a.dur, a.vel, info) if a.seguir else leer_frames(a.entrada, a.desde, a.dur, a.centro)
     nprev = None
     for f, g in enumerate(fuente):
         t = f/FPS; d = densidad(g, a); n = None

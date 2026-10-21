@@ -28,5 +28,21 @@ Consejo: para pruebas rápidas, el segundo argumento limita los fotogramas: `pyt
 ffmpeg -i entrada.mp4 -vf "format=rgb24,lutrgb=r='255*pow(val/255\,3.2)*0.75':g='255*min(1\,pow(val/255\,0.9)*1.08)':b='255*pow(val/255\,2.6)*0.45',format=yuv420p" -c:v libx264 -crf 16 salida.mp4
 ```
 
+### `video/` — Puntillismo desde un video real
+`video_stipple.py` convierte cualquier video en puntos con coherencia temporal (los puntos se mueven, no parpadean).
+- `--analizar`: solo muestra un informe (cortes de escena, tramos sin objeto, destellos) sin renderizar.
+- `--seguir`: encuadre automático 9:16 que sigue al objeto principal (ignora destellos) y lo mantiene completo.
+- `--cortes antes` (por defecto): termina antes del primer corte de escena o de que un destello (Sol/reflejo) se vuelva el objeto.
+- `--variable`: cantidad de puntos según el tamaño del objeto. `--estrellas N`: fondo estrellado.
+
+Ejemplo (Luna, NASA Artemis II, dominio público):
+```
+python3 video/video_stipple.py flyby_abril.mp4 luna.mp4 --seguir --vel 1.5 --dur 38 --puntos 60000 --variable 0.35 \
+  --estrellas 220 --negro 0.18 --gamma 2.2 --bordes 8 --tono_min 0.15 --brillo 4
+```
+Fuente: https://images.nasa.gov/details/lunarflyby_1min_2160p30 (NASA Scientific Visualization Studio).
+
+Las mejores fuentes: fondo negro u oscuro, luz lateral con sombras, un objeto principal claro, movimiento moderado.
+
 ## `videos/`
 Versiones aprobadas de cada proyecto.
