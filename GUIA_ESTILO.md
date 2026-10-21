@@ -26,3 +26,8 @@ Los valores exactos están en `video/estilo.py`. Todo script nuevo debe importar
 ## Fuentes
 - Mejor: fondo oscuro, luz lateral, un objeto principal claro, movimiento moderado.
 - Revisar siempre antes con `--analizar` (cortes, destellos, objetos secundarios).
+
+## ¿Puntillismo o Matrix?
+- **Puntillismo (por defecto):** naturaleza, espacio y universo, retratos, ciencia visual, todo lo que busque realismo o poesía visual. Conserva mucho más detalle (40–60 mil puntos libres).
+- **Matrix (verde y negro):** solo cuando el tema es digital: tecnología, datos, código, inteligencia artificial, ciberseguridad, personajes del mundo digital. El 0/1 refuerza el mensaje, pero la grilla de caracteres pierde detalle.
+- Ante la duda: puntillismo.
