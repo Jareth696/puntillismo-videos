@@ -1,0 +1,28 @@
+# Guía de estilo (aprobada con `videos/luna_8_fases.mp4`)
+
+Los valores exactos están en `video/estilo.py`. Todo script nuevo debe importarlo (`import estilo as E`).
+
+## Ritmo: nada hace esperar al espectador
+- **Lo visual empieza en el primer segundo.** El objeto se forma desde un punto mientras aparece el gancho (título/pregunta).
+- **El objeto está completo a los ~3,8 s** y la acción principal arranca **antes de los 6,5 s**.
+- **Etapas de ~3,8 s:** ~1,4 s quieta (para leer la etiqueta) + transición continua (sin cortes).
+- **La última etapa es más corta (~2,2 s)** y lleva directo al remate.
+- **El remate se forma en ~1,3 s** y su texto **empieza antes** de que termine la acción (se superponen).
+- **Cierre total ~4,6 s** desde el fin de la acción, con fundido de 1,2 s. Pensado para Reels: el dato final llega antes de que la gente deslice.
+
+## Textos (en puntos, `video/textos.py`)
+- Fuente fina (Inter ExtraLight), mayúsculas espaciadas, un poco más tenues que la imagen.
+- Se forman juntando puntos (~0,8 s) y se disuelven flotando (~0,9 s).
+- Pocos y breves: gancho arriba, etiquetas abajo y pequeñas, remate arriba. Lo principal es la imagen.
+- Contenido enfocado en el tema: sin elementos que distraigan del mensaje (p. ej. se quitó la Tierra en las fases).
+
+## Puntos
+- Blanco y negro, fondo negro (Matrix: verde y negro).
+- Contraste de textura intermedio (`CONTRASTE_BASE = 0.24`): se ven los detalles (mares, cráteres) sin huecos.
+- Sombras oscuras (`TONO_MIN`) y luz tenue en la parte oscura (`CENIZA`) para ver la silueta.
+- El motor reubica puntos varados en sombras y reparte rápido cuando cambia la luz (activado por defecto).
+- Indicador de progreso: fila de puntitos, la etapa actual grande y rellena.
+
+## Fuentes
+- Mejor: fondo oscuro, luz lateral, un objeto principal claro, movimiento moderado.
+- Revisar siempre antes con `--analizar` (cortes, destellos, objetos secundarios).

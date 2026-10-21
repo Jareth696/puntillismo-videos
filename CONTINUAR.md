@@ -1,5 +1,7 @@
 # Para continuar (estado al 21-oct-2026)
 
+**Antes de crear un video nuevo, leer `GUIA_ESTILO.md` y usar `video/estilo.py`.**
+
 ## Videos terminados (`videos/`)
 | Archivo | Qué es |
 |---|---|
@@ -8,7 +10,7 @@
 | `tesla_bombilla_v1.mp4` | Rostro de Tesla → bombilla sin cables (B/N) |
 | `tesla_bombilla_matrix_v1.mp4` | Tesla en Matrix verde |
 | `luna_fases_textos.mp4` | Sobrevuelo lunar real (NASA) en puntos, con textos |
-| `luna_8_fases.mp4` | **Último:** las 8 fases de la Luna (gancho, ciclo, cierre). Pendiente de aprobación final |
+| `luna_8_fases.mp4` | **Aprobado (v5):** las 8 fases de la Luna. Referencia de estilo y tiempos |
 
 ## Cómo regenerar
 - 8 fases: `cd luna && python3 fases8.py sin_textos.mp4` y luego
@@ -22,10 +24,9 @@
 - Foto Luna llena (ya incluida en `luna/src/`): NASA/GSFC, GSFC_20171208_Archive_e001861
 
 ## Próximos pasos posibles
-1. Revisar `luna_8_fases.mp4` y aprobar o ajustar.
-2. Versión Matrix verde de las 8 fases.
-3. Hoja desde video real: falta un video de Pexels/Pixabay (subirlo a `fuentes/` en este repo).
-4. Otros temas de la NASA (planetas, Sol, ISS, eclipses): revisar primero con `python3 video/video_stipple.py VIDEO x.mp4 --analizar`.
+1. Versión Matrix verde de las 8 fases.
+2. Hoja desde video real: falta un video de Pexels/Pixabay (subirlo a `fuentes/` en este repo).
+3. Otros temas de la NASA (planetas, Sol, ISS, eclipses): revisar primero con `python3 video/video_stipple.py VIDEO x.mp4 --analizar`.
 
 ## Notas
 - Las fases están orientadas para el hemisferio norte (creciente iluminada a la derecha).

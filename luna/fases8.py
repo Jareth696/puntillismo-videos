@@ -9,6 +9,7 @@ import sys, os, subprocess, numpy as np
 from PIL import Image
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "video"))
 import video_stipple as V
+import estilo as E                                     # tiempos y ajustes aprobados
 
 W, H, FPS, K = 1080, 1920, 24, 2
 GW, GH = W//K, H//K                                   # grilla de densidad
@@ -29,9 +30,9 @@ def cargar_textura(path=os.path.join(os.path.dirname(__file__), "src", "luna_lle
 TEX = cargar_textura(); TN = TEX.shape[0]
 
 # ---------- iluminación de una fase ----------
-CONTRASTE_BASE = 0.24                                   # 0 = textura original (mares muy oscuros), 0.38 = muy suave
+CONTRASTE_BASE = E.CONTRASTE_BASE
 yy, xx = np.mgrid[0:GH, 0:GW]
-def luna(phi, escala=1.0, luz=1.0, ceniza=0.035):
+def luna(phi, escala=1.0, luz=1.0, ceniza=E.CENIZA):
     """phi: 0 = nueva, pi/2 = cuarto creciente, pi = llena, 3pi/2 = cuarto menguante (hemisferio norte)."""
     r = R*escala/K
     x = (xx + 0.5 - CX/K)/max(r, 1e-3); y = (yy + 0.5 - CY/K)/max(r, 1e-3)
@@ -49,23 +50,23 @@ def luna(phi, escala=1.0, luz=1.0, ceniza=0.035):
 # ---------- guion ----------
 FASES = ["LUNA NUEVA", "CRECIENTE", "CUARTO CRECIENTE", "GIBOSA CRECIENTE",
          "LUNA LLENA", "GIBOSA MENGUANTE", "CUARTO MENGUANTE", "MENGUANTE"]
-T_GANCHO, T_APAGA, T_CICLO = 0.3, 4.9, 6.4             # nace la Luna / se apaga hacia la nueva / empieza el ciclo
-SEG, QUIETO = 3.8, 1.4                                  # duración de cada fase / tiempo quieta en cada una
-SEG_ULT, QUIETO_ULT = 2.2, 1.0                          # la última fase cierra rápido hacia el remate
+T_GANCHO, T_APAGA, T_CICLO = E.GANCHO_INICIO, E.GANCHO_FIN, E.ACCION_INICIO
+SEG, QUIETO = E.ETAPA, E.ETAPA_QUIETA
+SEG_ULT, QUIETO_ULT = E.ETAPA_FINAL, E.ETAPA_FINAL_QUIETA
 T_FIN_CICLO = T_CICLO + 7*SEG + SEG_ULT
-DUR = T_FIN_CICLO + 4.6
+DUR = T_FIN_CICLO + E.CIERRE
 
 def estado(t):
     """(phi, escala, luz, indice de fase o None)."""
     if t < T_APAGA:
-        return np.pi, 0.02 + 0.98*(1 - (1 - ss(T_GANCHO, 3.8, t))**1.6), 1.0, None
+        return np.pi, 0.02 + 0.98*(1 - (1 - ss(T_GANCHO, E.GANCHO_FORMADO, t))**1.6), 1.0, None
     if t < T_CICLO:                                       # la luz se apaga: queda la luz cenicienta
         return np.pi, 1.0, 1 - ss(T_APAGA, T_CICLO - 0.2, t), None
     if t < T_FIN_CICLO:
         k = min(int((t - T_CICLO)//SEG), 7); tt = (t - T_CICLO) - k*SEG
         q, s_ = (QUIETO, SEG) if k < 7 else (QUIETO_ULT, SEG_ULT)
         return k*np.pi/4 + np.pi/4*ss(q, s_, tt), 1.0, 1.0, k
-    return np.pi, 1.0, ss(T_FIN_CICLO, T_FIN_CICLO + 1.3, t), None          # se vuelve a formar la Luna llena
+    return np.pi, 1.0, ss(T_FIN_CICLO, T_FIN_CICLO + E.REMATE_FORMA, t), None          # se vuelve a formar la Luna llena
 
 def textos():
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "video"))
@@ -74,7 +75,7 @@ def textos():
     for k, nombre in enumerate(FASES):
         t0 = T_CICLO + k*SEG - 0.1
         T.append(Texto(nombre, t0, t0 + (QUIETO if k < 7 else QUIETO_ULT) + 0.6, y=1430, tam=34))
-    T += [Texto("UN CICLO COMPLETO", T_FIN_CICLO - 0.4, DUR - 1.3, y=230, tam=36),
+    T += [Texto("UN CICLO COMPLETO", T_FIN_CICLO - E.REMATE_TEXTO_ANTES, DUR - 1.3, y=230, tam=36),
           Texto("DURA 29,5 DÍAS", T_FIN_CICLO + 0.1, DUR - 1.2, y=290, tam=36)]
     return T
 
@@ -95,10 +96,10 @@ def indicador(buf, t):
         V.splat(buf, np.array([x]), np.array([1530.0]), np.array([e*(0.45 + 1.8*cerca)]))
 
 class A:                                                  # parámetros de densidad (como en video_stipple)
-    invertir = False; aislar = 0; negro = 0.0; gamma = 1.7; bordes = 6
+    invertir = False; aislar = 0; negro = 0.0; gamma = E.GAMMA; bordes = E.BORDES
 
 def main(out):
-    rng = np.random.default_rng(3); MX = 60000
+    rng = np.random.default_rng(3); MX = E.PUNTOS_MAX
     st = V.Stippler(MX, GH, GW); big = rng.uniform(size=MX) < 0.2; tw = rng.uniform(0, 6.28, MX)
     sx, sy = rng.uniform(0, W, 200), rng.uniform(0, H, 200); sb = rng.uniform(.15, .7, 200)**2; sp = rng.uniform(0, 6.28, 200)
     p = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "gray", "-s", f"{W}x{H}",
@@ -115,12 +116,12 @@ def main(out):
         esc_prev = esc
         pts, lum = st.step(d, 3, n); nn = len(pts)
         ln = np.clip(lum/max(np.percentile(lum, 97), 0.05), 0, 1)
-        w = (0.04 + 0.96*ln**1.1)*(0.92 + 0.08*np.sin(t*3 + tw[:nn]))*3.6
+        w = (E.TONO_MIN + (1 - E.TONO_MIN)*ln**1.1)*(0.92 + 0.08*np.sin(t*3 + tw[:nn]))*3.6
         sm = np.zeros((H, W)); bg = np.zeros((H, W)); bb = big[:nn]
         V.splat(sm, pts[~bb, 0], pts[~bb, 1], w[~bb]); V.splat(bg, pts[bb, 0], pts[bb, 1], w[bb])
         V.splat(sm, sx, sy, sb*(0.6 + 0.4*np.sin(t*1.5 + sp))*3*ss(0, 2, t))
         indicador(sm, t)
-        img = (sm + 2.2*V.blur(bg))*min(1, (DUR - t)/1.2)
+        img = (sm + 2.2*V.blur(bg))*min(1, (DUR - t)/E.FUNDIDO_FINAL)
         p.stdin.write((np.clip(img, 0, 1)*255).astype(np.uint8).tobytes())
         if f % 48 == 0: print(f"{f}/{total}", flush=True)
     p.stdin.close(); p.wait()
