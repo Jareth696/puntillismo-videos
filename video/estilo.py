@@ -20,6 +20,12 @@ REMATE_TEXTO_ANTES = 0.4   # el texto final empieza a formarse ANTES de que term
 CIERRE = 4.6               # desde el fin de la acción hasta el final del video
 FUNDIDO_FINAL = 1.2        # fundido a negro
 
+# ---------- REGLA DE INICIO (permanente, ver formacion.py) ----------
+# Fondo negro. El elemento principal nace desde un punto en el centro y crece (GANCHO_INICIO -> GANCHO_FORMADO)
+# mientras se forma el texto de contexto. Nada estático al inicio.
+TEXTO_GANCHO_1 = (0.5, 4.4)  # (aparece, se va) primera línea del gancho
+TEXTO_GANCHO_2 = (1.1, 4.6)  # segunda línea
+
 # ---------- textos ----------
 TEXTO_ENTRADA = 0.8        # los puntos se juntan en ~0,8 s (ver textos.py)
 TEXTO_SALIDA = 0.9         # se disuelven flotando en ~0,9 s

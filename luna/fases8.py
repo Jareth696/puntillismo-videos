@@ -10,6 +10,7 @@ from PIL import Image
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "video"))
 import video_stipple as V
 import estilo as E                                     # tiempos y ajustes aprobados
+from formacion import crecer
 
 W, H, FPS, K = 1080, 1920, 24, 2
 GW, GH = W//K, H//K                                   # grilla de densidad
@@ -59,7 +60,7 @@ DUR = T_FIN_CICLO + E.CIERRE
 def estado(t):
     """(phi, escala, luz, indice de fase o None)."""
     if t < T_APAGA:
-        return np.pi, 0.02 + 0.98*(1 - (1 - ss(T_GANCHO, E.GANCHO_FORMADO, t))**1.6), 1.0, None
+        return np.pi, crecer(t), 1.0, None                    # regla de inicio: nace desde un punto
     if t < T_CICLO:                                       # la luz se apaga: queda la luz cenicienta
         return np.pi, 1.0, 1 - ss(T_APAGA, T_CICLO - 0.2, t), None
     if t < T_FIN_CICLO:
@@ -71,7 +72,8 @@ def estado(t):
 def textos():
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "video"))
     from textos import Texto
-    T = [Texto("¿SABÍAS QUE LA LUNA", 0.5, 4.4, y=230, tam=42), Texto("TIENE 8 FASES?", 1.1, 4.6, y=295, tam=42)]
+    from formacion import textos_gancho
+    T = textos_gancho("¿SABÍAS QUE LA LUNA", "TIENE 8 FASES?")
     for k, nombre in enumerate(FASES):
         t0 = T_CICLO + k*SEG - 0.1
         T.append(Texto(nombre, t0, t0 + (QUIETO if k < 7 else QUIETO_ULT) + 0.6, y=1430, tam=34))
