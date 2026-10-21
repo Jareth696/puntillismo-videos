@@ -31,3 +31,21 @@ Los valores exactos están en `video/estilo.py`. Todo script nuevo debe importar
 - **Puntillismo (por defecto):** naturaleza, espacio y universo, retratos, ciencia visual, todo lo que busque realismo o poesía visual. Conserva mucho más detalle (40–60 mil puntos libres).
 - **Matrix (verde y negro):** solo cuando el tema es digital: tecnología, datos, código, inteligencia artificial, ciberseguridad, personajes del mundo digital. El 0/1 refuerza el mensaje, pero la grilla de caracteres pierde detalle.
 - Ante la duda: puntillismo.
+
+## Flujo de trabajo (acordado)
+1. **Elementos reales aislados** (hoja, rostro, Luna, edificio…): se toman de una foto o de un cuadro de video con buen
+   contraste, se les quita el fondo y se guardan en `elementos/` (biblioteca reutilizable). Se convierten a puntos
+   **una vez, con la imagen quieta** (Voronoi, 30 pasadas): así se ven nítidos, como Tesla.
+2. **Lo simple lo genera el código:** pasto, lluvia, viento, estrellas, montañas, rayos, partículas.
+3. **El movimiento y la historia los ponemos nosotros:** cámara, vuelo, transformaciones, textos y tiempos de esta guía.
+4. **Los elementos se combinan entre videos** (p. ej. la hoja vuela frente a la casa de Tesla).
+
+## Lección: convertir videos reales cuadro por cuadro casi nunca queda bien
+Muchos elementos pequeños, fondos con detalle y movimiento constante hacen que los puntos se vean como ruido.
+Usar video real solo para **extraer elementos** (como la textura de la hoja, del video 3737 de Mixkit) o en casos
+muy limpios (un objeto sobre fondo negro). El puntillismo se luce con **un objeto grande, fondo limpio y buena luz**.
+
+## Fuentes que funcionan desde la nube
+- **NASA** (images.nasa.gov): dominio público.  **Mixkit** (mixkit.co): videos gratis, uso comercial sin crédito.
+- Bloqueadas o limitadas desde la nube: Wikimedia/Flickr (429), Pexels/Freepik/Rawpixel (403), Unsplash/Pixabay (piden cuenta).
+  Desde el celular o la PC funcionan: se pueden subir a `fuentes/` del repo.
