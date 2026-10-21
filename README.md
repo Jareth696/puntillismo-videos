@@ -44,5 +44,9 @@ Fuente: https://images.nasa.gov/details/lunarflyby_1min_2160p30 (NASA Scientific
 
 Las mejores fuentes: fondo negro u oscuro, luz lateral con sombras, un objeto principal claro, movimiento moderado.
 
+### `luna/` — Las 8 fases de la Luna (híbrido)
+`fases8.py`: foto real de la Luna llena (NASA, en `src/`) iluminada fase por fase por el script; gancho dinámico,
+ciclo continuo con nombres e indicador de 8 puntos, cierre con la Luna llena. Textos con `video/textos.py`.
+
 ## `videos/`
 Versiones aprobadas de cada proyecto.
