@@ -51,7 +51,7 @@ def separacion(t):
     if t < T_ES: return 0.85 - 0.25*ss(T_PR + 0.6, T_PR + 2.4, t)
     return 0.6
 def visible_otra(t, i):
-    if t > T_PR + 1.6 and i >= 2: return 1 - ss(T_PR + 1.6, T_ES, t)   # al bajar, solo dos acompañan
+    if t > T_PR + 1.0 and i >= 2: return 1 - ss(T_PR + 1.0, T_PR + 2.0, t)   # al bajar, solo dos acompañan
     return 1.0
 
 R_GOTA = 72.0                                               # radio de las gotas "con zoom"
