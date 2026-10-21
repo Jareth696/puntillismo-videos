@@ -96,13 +96,16 @@ def main(out):
     sx, sy = rng.uniform(0, W, 200), rng.uniform(0, H, 200); sb = rng.uniform(.15, .7, 200)**2; sp = rng.uniform(0, 6.28, 200)
     p = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "gray", "-s", f"{W}x{H}",
                           "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "15", out], stdin=subprocess.PIPE)
-    nprev = None; total = int(DUR*FPS)
+    nprev = None; esc_prev = 1.0; total = int(DUR*FPS)
     for f in range(total):
         t = f/FPS; phi, esc, luz, _ = estado(t)
         g = luna(phi, esc, luz)
         gy, gx = np.gradient(V.blur(V.blur(g))); edge = np.clip(np.hypot(gx, gy)*A.bordes, 0, 1)
         d = np.clip(g, 0, 1)**A.gamma + 0.3*edge + 1e-5
         n = int(np.clip(d.sum()*0.33, 800, MX)); n = n if nprev is None else int(nprev + 0.3*(n - nprev)); nprev = n
+        if st.pts is not None and esc != esc_prev:              # la Luna crece: los puntos se expanden desde el centro
+            c = np.array([CX/K, CY/K]); st.pts = c + (st.pts - c)*(esc/esc_prev)
+        esc_prev = esc
         pts, lum = st.step(d, 3, n); nn = len(pts)
         ln = np.clip(lum/max(np.percentile(lum, 97), 0.05), 0, 1)
         w = (0.12 + 0.88*ln**0.9)*(0.92 + 0.08*np.sin(t*3 + tw[:nn]))*3.6
