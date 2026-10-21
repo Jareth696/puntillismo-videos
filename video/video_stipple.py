@@ -8,6 +8,28 @@ from scipy.spatial import cKDTree
 W, H, FPS = 1080, 1920, 24
 K = 2                                           # el mapa de densidad se calcula a 1/K de resolución
 
+def _crudo(path, desde, dur, vel, w, h):
+    vf = f"setpts=PTS/{vel},fps={FPS},scale={w}:{h},format=gray"
+    p = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-ss", str(desde), "-t", str(dur*vel), "-i", path, "-vf", vf,
+                          "-f", "rawvideo", "-"], stdout=subprocess.PIPE)
+    while True:
+        b = p.stdout.read(w*h)
+        if len(b) < w*h: break
+        yield np.frombuffer(b, np.uint8).reshape(h, w).astype(float)/255
+
+def leer_siguiendo(path, desde, dur, vel):
+    """Recorte vertical 9:16 que sigue al objeto brillante (centroide suavizado en el tiempo)."""
+    from PIL import Image
+    cs = []
+    for g in _crudo(path, desde, dur, vel, 320, 180):
+        m = np.clip(g - 0.08, 0, None); x = np.arange(320)
+        cs.append((m.sum(0)*x).sum()/m.sum()/320 if m.sum() > 1 else (cs[-1] if cs else 0.5))
+    cs = np.array(cs); k = np.exp(-np.linspace(-3, 3, 61)**2/2); k /= k.sum()
+    cs = np.convolve(np.pad(cs, 30, mode="edge"), k, mode="valid")
+    for i, g in enumerate(_crudo(path, desde, dur, vel, 1280, 720)):
+        cw = 405; x0 = int(np.clip(cs[i]*1280 - cw/2, 0, 1280 - cw))
+        yield np.asarray(Image.fromarray((g[:, x0:x0+cw]*255).astype(np.uint8)).resize((W//K, H//K), Image.BICUBIC), float)/255
+
 def leer_frames(path, desde, dur, cx):
     """ffmpeg: recorte vertical 9:16 (cx = centro horizontal 0..1), escala a W/K x H/K, gris."""
     vf = f"crop=ih*9/16:ih:(iw-ih*9/16)*{cx}:0,scale={W//K}:{H//K},fps={FPS},format=gray"
@@ -50,8 +72,14 @@ class Stippler:
     def sample(self, d, k):
         p = d.ravel()/d.sum(); i = self.rng.choice(d.size, k, p=p)
         return self.px[i] + self.rng.uniform(-0.5, 0.5, (k, 2))
-    def step(self, d, iters):
-        if self.pts is None: self.pts = self.sample(d, self.n); iters = max(iters, 20)
+    def step(self, d, iters, n=None):
+        if n is not None and self.pts is not None and n != len(self.pts):
+            if n > len(self.pts): self.pts = np.r_[self.pts, self.sample(d, n - len(self.pts))]
+            else: self.pts = self.pts[:n]
+            self.n = n
+        if self.pts is None:
+            if n: self.n = n
+            self.pts = self.sample(d, self.n); iters = max(iters, 20)
         wt = d.ravel(); m = wt > 2e-3; px = self.px[m]; wt = wt[m]
         for _ in range(iters):
             _, lab = cKDTree(self.pts).query(px, workers=-1)
@@ -78,18 +106,31 @@ def main():
     ap.add_argument("--bordes", type=float, default=8.0); ap.add_argument("--invertir", action="store_true")
     ap.add_argument("--aislar", type=float, default=0.0, help="0..1: cuánto restar el fondo suave")
     ap.add_argument("--brillo", type=float, default=3.0)
+    ap.add_argument("--seguir", action="store_true", help="recorte vertical que sigue al objeto brillante")
+    ap.add_argument("--vel", type=float, default=1.0, help="velocidad de reproducción")
+    ap.add_argument("--variable", type=float, default=0, help="puntos por unidad de luz (0 = cantidad fija)")
+    ap.add_argument("--estrellas", type=int, default=0)
+    ap.add_argument("--tono_min", type=float, default=0.55, help="brillo mínimo de un punto (1 = todos iguales)")
     a = ap.parse_args()
-    rng = np.random.default_rng(1); big = rng.uniform(size=a.puntos) < 0.2; tw = rng.uniform(0, 6.28, a.puntos)
+    rng = np.random.default_rng(1); MX = a.puntos; big = rng.uniform(size=MX) < 0.2; tw = rng.uniform(0, 6.28, MX)
+    sx, sy = rng.uniform(0, W, a.estrellas), rng.uniform(0, H, a.estrellas); sb = rng.uniform(.15, .7, a.estrellas)**2; sp = rng.uniform(0, 6.28, a.estrellas)
     st = Stippler(a.puntos, H//K, W//K)
     out = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "gray", "-s", f"{W}x{H}",
                             "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "15", a.salida], stdin=subprocess.PIPE)
     total = int(a.dur*FPS)
-    for f, g in enumerate(leer_frames(a.entrada, a.desde, a.dur, a.centro)):
-        t = f/FPS
-        pts, lum = st.step(densidad(g, a), a.iters)
-        w = (0.55 + 0.45*np.clip(lum*1.6, 0, 1))*(0.92 + 0.08*np.sin(t*3 + tw))*a.brillo
+    fuente = leer_siguiendo(a.entrada, a.desde, a.dur, a.vel) if a.seguir else leer_frames(a.entrada, a.desde, a.dur, a.centro)
+    nprev = None
+    for f, g in enumerate(fuente):
+        t = f/FPS; d = densidad(g, a); n = None
+        if a.variable:
+            n = int(np.clip(d.sum()*a.variable, 1500, MX)); n = n if nprev is None else int(nprev + 0.25*(n - nprev)); nprev = n
+        pts, lum = st.step(d, a.iters, n); nn = len(pts)
+        ln = np.clip(lum/max(np.percentile(lum, 97), 1e-3), 0, 1)
+        w = (a.tono_min + (1 - a.tono_min)*ln**0.9)*(0.92 + 0.08*np.sin(t*3 + tw[:len(lum)]))*a.brillo
         sm = np.zeros((H, W)); bg = np.zeros((H, W))
-        splat(sm, pts[~big, 0], pts[~big, 1], w[~big]); splat(bg, pts[big, 0], pts[big, 1], w[big])
+        bb = big[:nn]; w = w[:nn] if len(w) > nn else w
+        splat(sm, pts[~bb, 0], pts[~bb, 1], w[~bb]); splat(bg, pts[bb, 0], pts[bb, 1], w[bb])
+        if a.estrellas: splat(sm, sx, sy, sb*(0.6 + 0.4*np.sin(t*1.5 + sp))*3)
         img = (sm + 2.2*blur(bg))*min(1, t/0.6, (a.dur - t)/0.6)
         out.stdin.write((np.clip(img, 0, 1)*255).astype(np.uint8).tobytes())
         if f % 24 == 0: print(f"{f}/{total}", flush=True)
