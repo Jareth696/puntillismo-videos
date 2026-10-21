@@ -2,3 +2,4 @@ cache.npz
 __pycache__/
 *.png
 !tesla/src/*
+__pycache__/
