@@ -17,18 +17,32 @@ def _crudo(path, desde, dur, vel, w, h):
         if len(b) < w*h: break
         yield np.frombuffer(b, np.uint8).reshape(h, w).astype(float)/255
 
-def leer_siguiendo(path, desde, dur, vel):
-    """Recorte vertical 9:16 que sigue al objeto brillante (centroide suavizado en el tiempo)."""
+def leer_siguiendo(path, desde, dur, vel, margen=1.35, umbral=0.10):
+    """Encuadre automático 9:16: sigue al objeto brillante y ajusta el zoom para que entre completo con margen.
+    Si el objeto es más grande que el cuadro original, se agrega negro alrededor (se aleja la cámara)."""
     from PIL import Image
-    cs = []
-    for g in _crudo(path, desde, dur, vel, 320, 180):
-        m = np.clip(g - 0.08, 0, None); x = np.arange(320)
-        cs.append((m.sum(0)*x).sum()/m.sum()/320 if m.sum() > 1 else (cs[-1] if cs else 0.5))
-    cs = np.array(cs); k = np.exp(-np.linspace(-3, 3, 61)**2/2); k /= k.sum()
-    cs = np.convolve(np.pad(cs, 30, mode="edge"), k, mode="valid")
-    for i, g in enumerate(_crudo(path, desde, dur, vel, 1280, 720)):
-        cw = 405; x0 = int(np.clip(cs[i]*1280 - cw/2, 0, 1280 - cw))
-        yield np.asarray(Image.fromarray((g[:, x0:x0+cw]*255).astype(np.uint8)).resize((W//K, H//K), Image.BICUBIC), float)/255
+    sw, sh = 320, 180; cx, cy, hh = [], [], []
+    for g in _crudo(path, desde, dur, vel, sw, sh):
+        m = g > umbral
+        if m.sum() > 20:
+            ys, xs = np.nonzero(m)
+            x0, x1 = np.percentile(xs, [0.5, 99.5]); y0, y1 = np.percentile(ys, [0.5, 99.5])
+            cx.append((x0+x1)/2/sw); cy.append((y0+y1)/2/sh)
+            hh.append(max((y1-y0)/sh, (x1-x0)/sw*sw/sh*16/9)*margen)    # alto necesario (fracción del alto original)
+        else:
+            cx.append(cx[-1] if cx else .5); cy.append(cy[-1] if cy else .5); hh.append(hh[-1] if hh else 1.0)
+    k = np.exp(-np.linspace(-3, 3, 49)**2/2); k /= k.sum()
+    sm = lambda v: np.convolve(np.pad(np.array(v), 24, mode="edge"), k, mode="valid")
+    cx, cy, hh = sm(cx), sm(cy), np.clip(sm(hh), 0.35, 3.0)
+    SW, SH = 1280, 720
+    for i, g in enumerate(_crudo(path, desde, dur, vel, SW, SH)):
+        ch = hh[i]*SH; cw = ch*9/16
+        x0 = cx[i]*SW - cw/2; y0 = cy[i]*SH - ch/2
+        if ch <= SH: y0 = np.clip(y0, 0, SH-ch)                        # sin salir del cuadro si cabe
+        if cw <= SW: x0 = np.clip(x0, 0, SW-cw)
+        im = Image.fromarray((g*255).astype(np.uint8))
+        out = im.transform((W//K, H//K), Image.EXTENT, (x0, y0, x0+cw, y0+ch), Image.BICUBIC, fillcolor=0)
+        yield np.asarray(out, float)/255
 
 def leer_frames(path, desde, dur, cx):
     """ffmpeg: recorte vertical 9:16 (cx = centro horizontal 0..1), escala a W/K x H/K, gris."""
