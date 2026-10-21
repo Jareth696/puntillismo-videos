@@ -3,9 +3,9 @@
 Los valores exactos están en `video/estilo.py`. Todo script nuevo debe importarlo (`import estilo as E`).
 
 ## REGLA DE INICIO (permanente)
-**Fondo negro. El elemento principal nace desde un punto en el centro y crece hasta formarse, mientras al mismo
-tiempo se forma el texto de contexto (gancho).** Igual que en `luna_8_fases.mp4`. Código: `video/formacion.py`
-(`crecer`, `aplicar_crecimiento`, `textos_gancho`).
+**Fondo negro. Puntos dispersos por toda la pantalla se juntan rápido (en ~2 s, escalonados) y forman el elemento
+principal, mientras al mismo tiempo se forma el texto de contexto (gancho).** Como la entrada de Tesla: desde el primer
+instante se nota que todo está hecho de puntos. Código: `video/formacion.py` (`converger`, `textos_gancho`).
 
 ## Dirección principal: plano fijo, los elementos aparecen y se transforman
 - La cámara casi no se mueve; los protagonistas son los puntos: nacen, se transforman, se disuelven.

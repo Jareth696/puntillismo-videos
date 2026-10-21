@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "video"))
 import hoja_bn5 as B                                   # hoja dibujada aprobada (geometría, normales, tonos)
 import estilo as E
-from formacion import aplicar_crecimiento, textos_gancho
+from formacion import converger, textos_gancho
 
 W, H, FPS = 1080, 1920, 24
 ss = B.ss
@@ -129,7 +129,7 @@ def frame(t):
     bright = luz*(0.55 + 0.45*B.ltone)
     bright = np.where(B.lkind > 0, np.minimum(1, bright*1.15 + 0.2), bright)
     w = bright*(0.94 + 0.06*np.sin(t*5 + tw))*1.25
-    px, py, w = aplicar_crecimiento(sx, sy, w, t, cx, cy)          # regla de inicio: nace desde un punto
+    px, py, w = converger(sx, sy, w, t)                              # regla de inicio: puntos dispersos se juntan
     splat(sm, px[~big], py[~big], w[~big]); splat(bg, px[big], py[big], w[big])
     img = (sm + 2.2*B.blur(bg))*min(1, (DUR - t)/E.FUNDIDO_FINAL)
     return (np.clip(img, 0, 1)*255).astype(np.uint8)

@@ -21,8 +21,11 @@ CIERRE = 4.6               # desde el fin de la acción hasta el final del video
 FUNDIDO_FINAL = 1.2        # fundido a negro
 
 # ---------- REGLA DE INICIO (permanente, ver formacion.py) ----------
-# Fondo negro. El elemento principal nace desde un punto en el centro y crece (GANCHO_INICIO -> GANCHO_FORMADO)
+# Fondo negro. Puntos dispersos por toda la pantalla se juntan rápido (como Tesla) y forman el elemento principal,
 # mientras se forma el texto de contexto. Nada estático al inicio.
+CONVERGE_INICIO = 0.2      # los puntos empiezan a moverse
+CONVERGE_ESCALON = 1.1     # demora máxima entre el primer y el último punto (llegan escalonados)
+CONVERGE_VIAJE = 1.0       # lo que tarda cada punto en llegar -> elemento formado a ~2,3 s
 TEXTO_GANCHO_1 = (0.5, 4.4)  # (aparece, se va) primera línea del gancho
 TEXTO_GANCHO_2 = (1.1, 4.6)  # segunda línea
 

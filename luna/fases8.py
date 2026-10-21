@@ -10,7 +10,7 @@ from PIL import Image
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "video"))
 import video_stipple as V
 import estilo as E                                     # tiempos y ajustes aprobados
-from formacion import crecer
+from formacion import converger
 
 W, H, FPS, K = 1080, 1920, 24, 2
 GW, GH = W//K, H//K                                   # grilla de densidad
@@ -60,7 +60,7 @@ DUR = T_FIN_CICLO + E.CIERRE
 def estado(t):
     """(phi, escala, luz, indice de fase o None)."""
     if t < T_APAGA:
-        return np.pi, crecer(t), 1.0, None                    # regla de inicio: nace desde un punto
+        return np.pi, 1.0, 1.0, None                          # regla de inicio: ver converger() en main
     if t < T_CICLO:                                       # la luz se apaga: queda la luz cenicienta
         return np.pi, 1.0, 1 - ss(T_APAGA, T_CICLO - 0.2, t), None
     if t < T_FIN_CICLO:
@@ -117,6 +117,8 @@ def main(out):
             c = np.array([CX/K, CY/K]); st.pts = c + (st.pts - c)*(esc/esc_prev)
         esc_prev = esc
         pts, lum = st.step(d, 3, n); nn = len(pts)
+        ln_ = None
+        if t < T_APAGA: pts = np.c_[converger(pts[:, 0], pts[:, 1], np.ones(nn), t)[:2]]   # puntos dispersos se juntan
         ln = np.clip(lum/max(np.percentile(lum, 97), 0.05), 0, 1)
         w = (E.TONO_MIN + (1 - E.TONO_MIN)*ln**1.1)*(0.92 + 0.08*np.sin(t*3 + tw[:nn]))*3.6
         sm = np.zeros((H, W)); bg = np.zeros((H, W)); bb = big[:nn]
