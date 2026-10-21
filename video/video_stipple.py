@@ -55,6 +55,7 @@ NIV = {}
 def densidad(g, a):
     if a.invertir: g = 1 - g
     lo, hi = np.percentile(g, 2), np.percentile(g, 99.5)          # contraste automático (suavizado en el tiempo)
+    hi = max(hi, 0.45)                                              # cuadros oscuros: no amplificar el ruido
     NIV.setdefault("lo", lo); NIV.setdefault("hi", hi)
     NIV["lo"] += 0.1*(lo - NIV["lo"]); NIV["hi"] += 0.1*(hi - NIV["hi"])
     g = np.clip((g - NIV["lo"])/max(NIV["hi"] - NIV["lo"], 0.05), 0, 1)
