@@ -30,7 +30,7 @@ TEX = cargar_textura(); TN = TEX.shape[0]
 
 # ---------- iluminación de una fase ----------
 yy, xx = np.mgrid[0:GH, 0:GW]
-def luna(phi, escala=1.0, luz=1.0, ceniza=0.07):
+def luna(phi, escala=1.0, luz=1.0, ceniza=0.035):
     """phi: 0 = nueva, pi/2 = cuarto creciente, pi = llena, 3pi/2 = cuarto menguante (hemisferio norte)."""
     r = R*escala/K
     x = (xx + 0.5 - CX/K)/max(r, 1e-3); y = (yy + 0.5 - CY/K)/max(r, 1e-3)
@@ -48,26 +48,26 @@ def luna(phi, escala=1.0, luz=1.0, ceniza=0.07):
 # ---------- guion ----------
 FASES = ["LUNA NUEVA", "CRECIENTE", "CUARTO CRECIENTE", "GIBOSA CRECIENTE",
          "LUNA LLENA", "GIBOSA MENGUANTE", "CUARTO MENGUANTE", "MENGUANTE"]
-T_GANCHO, T_APAGA, T_CICLO = 0.3, 6.0, 7.6             # nace la Luna / se apaga hacia la nueva / empieza el ciclo
+T_GANCHO, T_APAGA, T_CICLO = 0.3, 4.9, 6.4             # nace la Luna / se apaga hacia la nueva / empieza el ciclo
 SEG, QUIETO = 3.8, 1.4                                  # duración de cada fase / tiempo quieta en cada una
 T_FIN_CICLO = T_CICLO + 8*SEG
-DUR = T_FIN_CICLO + 5.6
+DUR = T_FIN_CICLO + 6.4
 
 def estado(t):
     """(phi, escala, luz, indice de fase o None)."""
     if t < T_APAGA:
-        return np.pi, 0.02 + 0.98*(1 - (1 - ss(T_GANCHO, 4.6, t))**1.6), 1.0, None
+        return np.pi, 0.02 + 0.98*(1 - (1 - ss(T_GANCHO, 3.8, t))**1.6), 1.0, None
     if t < T_CICLO:                                       # la luz se apaga: queda la luz cenicienta
         return np.pi, 1.0, 1 - ss(T_APAGA, T_CICLO - 0.2, t), None
     if t < T_FIN_CICLO:
         k = int((t - T_CICLO)//SEG); tt = (t - T_CICLO) - k*SEG
         return k*np.pi/4 + np.pi/4*ss(QUIETO, SEG, tt), 1.0, 1.0, k
-    return 2*np.pi, 1.0, 1.0, None
+    return np.pi, 1.0, ss(T_FIN_CICLO + 0.2, T_FIN_CICLO + 2.6, t), None    # se vuelve a formar la Luna llena
 
 def textos():
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "video"))
     from textos import Texto
-    T = [Texto("¿SABÍAS QUE LA LUNA", 0.8, 5.4, y=230, tam=42), Texto("TIENE 8 FASES?", 1.5, 5.6, y=295, tam=42)]
+    T = [Texto("¿SABÍAS QUE LA LUNA", 0.5, 4.4, y=230, tam=42), Texto("TIENE 8 FASES?", 1.1, 4.6, y=295, tam=42)]
     for k, nombre in enumerate(FASES):
         t0 = T_CICLO + k*SEG - 0.1
         T.append(Texto(nombre, t0, t0 + QUIETO + 0.9, y=1430, tam=34))
@@ -76,6 +76,7 @@ def textos():
     return T
 
 # ---------- render ----------
+rng_i = np.random.default_rng(11)
 def indicador(buf, t):
     """Fila de 8 puntitos: la fase actual brilla."""
     if t < T_CICLO - 0.6 or t > T_FIN_CICLO + 0.6: return
@@ -83,9 +84,12 @@ def indicador(buf, t):
     pos = (t - T_CICLO)/SEG                                # avance continuo entre fases
     for k in range(8):
         x = W/2 + (k - 3.5)*38; cerca = np.clip(1 - abs(pos - k - 0.18), 0, 1)**2
-        r = 3 + 4*cerca; a = np.linspace(0, 2*np.pi, 18, endpoint=False)
-        V.splat(buf, x + r*np.cos(a)*np.r_[1], 1530 + r*np.sin(a), np.full(18, e*(0.25 + 0.75*cerca)*0.9))
-        V.splat(buf, np.array([x]), np.array([1530.0]), np.array([e*(0.6 + 1.4*cerca)]))
+        x = W/2 + (k - 3.5)*44
+        r = 2.5 + 9*cerca; a = np.linspace(0, 2*np.pi, 28, endpoint=False)
+        V.splat(buf, x + r*np.cos(a), 1530 + r*np.sin(a), np.full(28, e*(0.15 + 0.95*cerca)))   # anillo
+        rd = 4.5*cerca; b = rng_i.uniform(0, 2*np.pi, 14); q = rd*np.sqrt(rng_i.uniform(0, 1, 14))
+        V.splat(buf, x + q*np.cos(b), 1530 + q*np.sin(b), np.full(14, e*1.2*cerca))            # relleno de la actual
+        V.splat(buf, np.array([x]), np.array([1530.0]), np.array([e*(0.45 + 1.8*cerca)]))
 
 class A:                                                  # parámetros de densidad (como en video_stipple)
     invertir = False; aislar = 0; negro = 0.0; gamma = 1.7; bordes = 6
@@ -108,7 +112,7 @@ def main(out):
         esc_prev = esc
         pts, lum = st.step(d, 3, n); nn = len(pts)
         ln = np.clip(lum/max(np.percentile(lum, 97), 0.05), 0, 1)
-        w = (0.12 + 0.88*ln**0.9)*(0.92 + 0.08*np.sin(t*3 + tw[:nn]))*3.6
+        w = (0.04 + 0.96*ln**1.1)*(0.92 + 0.08*np.sin(t*3 + tw[:nn]))*3.6
         sm = np.zeros((H, W)); bg = np.zeros((H, W)); bb = big[:nn]
         V.splat(sm, pts[~bb, 0], pts[~bb, 1], w[~bb]); V.splat(bg, pts[bb, 0], pts[bb, 1], w[bb])
         V.splat(sm, sx, sy, sb*(0.6 + 0.4*np.sin(t*1.5 + sp))*3*ss(0, 2, t))
