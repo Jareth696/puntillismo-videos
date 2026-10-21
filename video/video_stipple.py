@@ -62,7 +62,7 @@ def informe(info):
     malos = cortes + [i for i in luz if all(info[j]["luz"] for j in range(i, min(i + FPS//4, len(info))))]
     return sorted(malos)
 
-def leer_siguiendo(path, desde, dur, vel, info, margen=1.35):
+def leer_siguiendo(path, desde, dur, vel, info, margen=1.35, solo_principal=False):
     """Encuadre automático 9:16 sobre el objeto principal (ignora destellos): lo mantiene completo con margen.
     Si el objeto es más grande que el cuadro original, se agrega negro alrededor (se aleja la cámara)."""
     from PIL import Image
@@ -85,8 +85,35 @@ def leer_siguiendo(path, desde, dur, vel, info, margen=1.35):
         if ch <= SH: y0 = np.clip(y0, 0, SH-ch)
         if cw <= SW: x0 = np.clip(x0, 0, SW-cw)
         im = Image.fromarray((g*255).astype(np.uint8))
-        out = im.transform((W//K, H//K), Image.EXTENT, (x0, y0, x0+cw, y0+ch), Image.BICUBIC, fillcolor=0)
-        yield np.asarray(out, float)/255
+        out = np.asarray(im.transform((W//K, H//K), Image.EXTENT, (x0, y0, x0+cw, y0+ch), Image.BICUBIC, fillcolor=0), float)/255
+        if solo_principal:                                              # borra todo lo que no sea el objeto principal
+            from scipy import ndimage
+            lab, n = ndimage.label(out > 0.08)
+            if n > 1:
+                k = int(np.argmax(ndimage.sum(np.ones_like(out), lab, range(1, n+1)))) + 1
+                out = out*ndimage.binary_dilation(lab == k, iterations=6)
+        yield out
+
+def pista_secundaria(path, desde, dur, vel, cortes="antes"):
+    """Posición (en el video final 1080x1920) del segundo objeto, fuera del principal, por cuadro; None si no hay.
+    Usa el mismo análisis y encuadre que el render, así coincide con lo que se ve (sirve para etiquetas)."""
+    from scipy import ndimage
+    info = analizar(path, desde, dur, vel)
+    malos = [i for i, d in enumerate(info) if d["corte"]]
+    if malos and cortes == "antes": info = info[:max(malos[0] - FPS//2, FPS)]
+    pos = []
+    for out in leer_siguiendo(path, desde, len(info)/FPS, vel, info):
+        lab, n = ndimage.label(out > 0.08); p = None
+        if n > 1:
+            areas = ndimage.sum(np.ones_like(out), lab, range(1, n+1)); orden = np.argsort(areas)[::-1]
+            zona = ndimage.binary_dilation(ndimage.binary_fill_holes(lab == orden[0] + 1), iterations=8)
+            for k in orden[1:] + 1:
+                comp = lab == k
+                compacto = areas[k-1] < 0.003*out.size and out[comp].max() > 0.35 and out[comp].mean() > 0.18
+                if areas[k-1] >= 4 and compacto and not (zona & comp).any():
+                    cy, cx = ndimage.center_of_mass(comp); p = (cx*K, cy*K); break
+        pos.append(p)
+    return pos
 
 def leer_frames(path, desde, dur, cx):
     """ffmpeg: recorte vertical 9:16 (cx = centro horizontal 0..1), escala a W/K x H/K, gris."""
@@ -172,6 +199,8 @@ def main():
     ap.add_argument("--estrellas", type=int, default=0)
     ap.add_argument("--cortes", choices=["antes", "ignorar"], default="antes",
                     help="antes = terminar antes del primer corte de escena o destello; ignorar = procesar todo")
+    ap.add_argument("--solo-principal", dest="solo_principal", action="store_true",
+                    help="dibuja solo el objeto principal (borra otros cuerpos y destellos)")
     ap.add_argument("--analizar", action="store_true", help="solo mostrar el informe del video, sin renderizar")
     ap.add_argument("--tono_min", type=float, default=0.55, help="brillo mínimo de un punto (1 = todos iguales)")
     a = ap.parse_args()
@@ -187,7 +216,7 @@ def main():
         if cortes and a.cortes == "antes":
             fin = max(cortes[0] - FPS//2, FPS); print(f"Termina antes del primer problema: {fin/FPS:.1f}s"); info = info[:fin]
             a.dur = len(info)/FPS
-    fuente = leer_siguiendo(a.entrada, a.desde, a.dur, a.vel, info) if a.seguir else leer_frames(a.entrada, a.desde, a.dur, a.centro)
+    fuente = leer_siguiendo(a.entrada, a.desde, a.dur, a.vel, info, solo_principal=a.solo_principal) if a.seguir else leer_frames(a.entrada, a.desde, a.dur, a.centro)
     nprev = None
     for f, g in enumerate(fuente):
         t = f/FPS; d = densidad(g, a); n = None
