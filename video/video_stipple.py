@@ -164,8 +164,8 @@ def densidad(g, a):
     return d + 1e-5
 
 class Stippler:
-    def __init__(self, n, h, w, seed=0):
-        self.n = n; self.rng = np.random.default_rng(seed)
+    def __init__(self, n, h, w, seed=0, equilibrar=True):
+        self.n = n; self.rng = np.random.default_rng(seed); self.equilibrar = equilibrar
         yy, xx = np.mgrid[0:h, 0:w]; self.px = np.c_[xx.ravel()+0.5, yy.ravel()+0.5]; self.pts = None
     def sample(self, d, k):
         p = d.ravel()/d.sum(); i = self.rng.choice(d.size, k, p=p)
@@ -186,6 +186,13 @@ class Stippler:
             ok = sw > max(1e-6, 0.04*np.median(sw[sw > 0])) if (sw > 0).any() else sw > 1e-6
             self.pts[ok] = np.c_[sx[ok]/sw[ok], sy[ok]/sw[ok]]
             if (~ok).any(): self.pts[~ok] = self.sample(d, (~ok).sum())
+        # equilibrio rápido: puntos con celdas casi sin luz se mudan junto a los de celdas con demasiada luz
+        if self.equilibrar and (sw > 0).any():
+            k = max(int(self.n*0.03), 1); orden = np.argsort(sw)
+            pobres, ricos = orden[:k], orden[::-1][:k]
+            m = sw[ricos] > 2.5*np.maximum(sw[pobres], 1e-9)               # solo si la diferencia es grande
+            if m.any():
+                self.pts[pobres[m]] = self.pts[ricos[m]] + self.rng.normal(0, 1.2, (m.sum(), 2))
         # brillo de cada punto = densidad local (zonas tenues -> puntos tenues)
         ix = np.clip(self.pts[:, 0].astype(int), 0, d.shape[1]-1); iy = np.clip(self.pts[:, 1].astype(int), 0, d.shape[0]-1)
         return self.pts*K, d[iy, ix]

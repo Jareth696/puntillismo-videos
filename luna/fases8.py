@@ -40,7 +40,7 @@ def luna(phi, escala=1.0, luz=1.0, ceniza=0.035):
     mu0 = x*L[0] + z*L[2]                                 # coseno del ángulo con el Sol
     dia = ss(-0.03, 0.12, mu0)*(0.45 + 0.55*np.sqrt(np.clip(mu0, 0, 1)))
     u = np.clip(((x + 1)/2*TN).astype(int), 0, TN-1); v = np.clip(((y + 1)/2*TN).astype(int), 0, TN-1)
-    alb = TEX[v, u]
+    alb = 0.38 + 0.62*TEX[v, u]                           # contraste suave: los mares se notan sin dejar huecos
     img = alb*(luz*dia + ceniza*(1 - ss(-0.03, 0.12, mu0)))   # luz cenicienta en la parte oscura
     borde = ss(1.0, 0.985, np.sqrt(rr2))                   # borde suave del disco
     return np.where(dentro, img*borde, 0.0)
