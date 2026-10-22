@@ -1,4 +1,4 @@
-"""Ciclo del agua v7 = v6 + el TIEMPO se ve: túnel del tiempo en el gancho, reloj de arena y contador de años
+"""Ciclo del agua v7 = v6 + el TIEMPO se ve: viaje en el tiempo en el gancho (espiral de símbolos y galaxias), reloj de arena y contador de años
 mientras la gota espera en el mar (las olas en cámara rápida), cambios de estado marcados (calor que la agita y la
 abre en vapor / anillo que se cierra al volver a ser gota), reloj con los días que viaja en la nube y un círculo
 de "ciclo" en el remate.
@@ -44,22 +44,56 @@ def contador(buf, texto, y, e, tam=E.TAM_TITULO):
 
 def miles(n): return f"{n:,}".replace(",", ".")
 
-# ---------- túnel del tiempo (gancho): anillos de marcas de reloj que se abren desde la gota ----------
+# ---------- viaje en el tiempo (gancho): espiral de símbolos que sale de la gota ----------
+from PIL import Image, ImageDraw, ImageFont
+SIMBOLOS = ["H₂O", "E=mc²", "π", "∞", "Σ", "∫", "√2", "Δt", "λ", "Ω", "10⁹", "∂", "α", "ƒ(t)", "4.000.000.000 AÑOS",
+            "β", "γ", "∇", "e", "θ", "≈", "x²", "1/2", "μ", "H", "O", "Δ", "φ"]
+def simbolo(txt, tam=56, seed=0):
+    f = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", tam*2)
+    bb = f.getbbox(txt); im = Image.new("L", (bb[2] - bb[0] + 8, bb[3] - bb[1] + 8))
+    ImageDraw.Draw(im).text((4 - bb[0], 4 - bb[1]), txt, font=f, fill=255)
+    m = np.asarray(im.resize((im.width//2, im.height//2), Image.LANCZOS), float)/255
+    ys, xs = np.nonzero(m > 0.2); r = np.random.default_rng(seed); n = max(int(m.sum()*0.9), 30)
+    i = r.choice(len(xs), n, p=m[ys, xs]/m[ys, xs].sum())
+    return np.c_[xs[i] - m.shape[1]/2 + r.uniform(-.5, .5, n), ys[i] - m.shape[0]/2 + r.uniform(-.5, .5, n)]
+GLIFOS = [simbolo(s_, seed=k) for k, s_ in enumerate(SIMBOLOS)]
+
+def galaxia(n=500, seed=0):
+    r = np.random.default_rng(seed); brazo = r.integers(0, 2, n); u = r.uniform(0, 1, n)**0.7
+    a = brazo*np.pi + u*4.2 + r.normal(0, 0.25, n); rr = u*60
+    return np.c_[rr*np.cos(a), rr*np.sin(a)*0.55]
+GALAX = [galaxia(seed=k) for k in range(5)]
+
+T_VIAJE = (0.4, 3.9)                              # mientras se forma la gota y se lee el gancho
+NV = 46                                           # símbolos/galaxias que salen en espiral
+v_t0 = np.sort(rng.uniform(T_VIAJE[0], T_VIAJE[1] - 0.9, NV)); v_a0 = rng.uniform(0, 2*np.pi, NV)
+v_g = rng.integers(0, len(GLIFOS), NV); v_gal = rng.uniform(size=NV) < 0.18; v_rot = rng.uniform(-1, 1, NV)
+BR = 3; br_k = np.linspace(0, 1, 260)               # brazos del espiral (estelas de puntos)
+def viaje(buf, t, P):
+    g = ss(T_VIAJE[0], T_VIAJE[0] + 0.5, t)*(1 - ss(T_VIAJE[1] - 0.5, T_VIAJE[1], t))
+    if g < 0.01: return
+    gx, gy, _, _ = camino(t); cx, cy = gx, P(gy)
+    giro = -2.2*t                                                       # todo el remolino gira
+    for j in range(BR):                                                 # brazos: espiral logarítmica que gira
+        a = giro*1.3 + j*2*np.pi/BR + br_k*5.0; r = 110*np.exp(br_k*2.3)
+        zs(buf, cx + r*np.cos(a), cy + r*np.sin(a)*0.92, 0.6*g*(1 - br_k)**0.6*(0.6 + 0.4*np.sin(br_k*40 - t*12)))
+    for i in range(NV):                                                 # símbolos y galaxias que salen hacia la cámara
+        e = (t - v_t0[i])/1.6
+        if not 0 < e < 1: continue
+        r = 180*np.exp(e*2.1); a = v_a0[i] + giro + e*3.0
+        esc = 0.35 + 1.6*e**1.5
+        G = (GALAX[i % len(GALAX)] if v_gal[i] else GLIFOS[v_g[i]])*esc
+        c_, s_ = np.cos(v_rot[i]*e*2), np.sin(v_rot[i]*e*2)
+        x = G[:, 0]*c_ - G[:, 1]*s_; y = G[:, 0]*s_ + G[:, 1]*c_
+        w = 0.85*g*ss(0.08, 0.3, e)*(1 - ss(0.65, 1, e))
+        zs(buf, cx + r*np.cos(a) + x, cy + r*np.sin(a) + y, np.full(len(x), w))
+
 TICK_A = np.linspace(0, 2*np.pi, 60, endpoint=False); TICK_L = np.where(np.arange(60) % 5 == 0, 0.12, 0.05)
 def anillo_reloj(buf, cx, cy, r, ang, w, splat=raw):
+    """Esfera de reloj: 60 marcas (cada 5, más largas)."""
     k = np.linspace(0, 1, 5)
     a = np.repeat(TICK_A + ang, 5); rr = r*(1 + np.outer(TICK_L, k).ravel())
     splat(buf, cx + rr*np.cos(a), cy + rr*np.sin(a), np.full(len(a), w))
-
-def tunel(buf, t, P):
-    g = ss(0.5, 1.0, t)*(1 - ss(2.5, 3.3, t))
-    if g < 0.01: return
-    gx, gy, _, _ = camino(t)
-    for k in range(8):
-        a = t - (0.4 + 0.38*k)
-        if 0 < a < 2.2:
-            r = 150 + 380*a**1.5
-            anillo_reloj(buf, gx, P(gy), r, (0.35 if k % 2 else -0.35)*a, g*0.95*ss(0, 0.25, a)*(1 - r/1150)**0.8, zs)
 
 # ---------- reloj de arena ----------
 HB, WB, CUELLO = 135.0, 100.0, 7.0
@@ -155,7 +189,7 @@ def ciclo(buf, t, P):
 _extra6 = C5.EXTRA
 def extra(sm, t, P):
     _extra6(sm, t, P)
-    tunel(sm, t, P); reloj_arena(sm, t); calor(sm, t, P); anillo_estado(sm, t, P); reloj_dias(sm, t, P); ciclo(sm, t, P)
+    viaje(sm, t, P); reloj_arena(sm, t); calor(sm, t, P); anillo_estado(sm, t, P); reloj_dias(sm, t, P); ciclo(sm, t, P)
     # contadores (en cámara rápida)
     _, c0, c1, d1 = T_RA
     if c0 - 0.4 < t < d1:

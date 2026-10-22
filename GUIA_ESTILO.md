@@ -106,3 +106,14 @@ muy limpios (un objeto sobre fondo negro). El puntillismo se luce con **un objet
 - **La duración la pone la historia:** dura lo que tenga que durar, con entradas, transiciones y salidas rápidas.
 - **Que el tiempo se vea** (ciclo del agua v9): cuando la historia dice "pasan años/días", mostrarlo con relojes de
   puntos, contadores y cámara rápida, no solo decirlo.
+
+## Regla del motor: la cámara nunca queda quieta mientras pasan los textos (Galileo v4)
+- Si una misma imagen se sostiene con uno o más textos, la cámara **se sigue acercando** al punto de interés (el rostro,
+  el objeto clave), más rápido cuanto más textos haya. Usar `video/camara.py` (`acercar`, `aplicar`).
+- Las etiquetas de identidad (pergamino con el nombre) **quedan fijas** mientras la cámara se acerca: atribuyen el cierre.
+- Al acercarse, los puntos se separan: subir el brillo con el zoom (≈ z^0.9) y, si el cierre termina en un rostro,
+  poner más puntos en la cabeza al hacer el Voronoi.
+
+## Viaje en el tiempo (ciclo del agua v10)
+- Para "pasaron millones de años": un remolino que gira alrededor del protagonista, con brazos en espiral y símbolos
+  (ecuaciones, H₂O, π, ∞, galaxias pequeñas) que salen hacia la cámara, creciendo y girando. Justo en el gancho.

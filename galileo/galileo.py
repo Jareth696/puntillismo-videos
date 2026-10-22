@@ -16,9 +16,10 @@ import estilo as E
 import stipple
 from formacion import converger, textos_gancho
 from pergamino import pergamino
+from camara import acercar, aplicar
 
 W, H, FPS = 1080, 1920, 24
-N = 33000; CX, CY = 540.0, 960.0
+N = 35000; CX, CY = 540.0, 960.0
 ss = lambda a, b, x: (lambda t: t*t*(3-2*t))(np.clip((x-a)/(b-a), 0, 1))
 rng = np.random.default_rng(9)
 
@@ -67,11 +68,12 @@ def estatua(n=24000):
     M = np.asarray(Image.fromarray((M*255).astype(np.uint8)).resize((G.shape[1], G.shape[0])), float)/255 > 0.5
     gy, gx = np.gradient(ndimage.gaussian_filter(G, 1)); edge = np.clip(np.hypot(gx, gy)*6, 0, 1)
     d = M*(np.clip((G - 0.2)/0.7, 0, 1)**1.3 + 0.5*edge) + 1e-6*M
+    esc = 1320/G.shape[0]; fila = np.arange(G.shape[0])[:, None]
+    d = d*(1 + 2.2*ss(G.shape[0]/2 + (560 - 1010)/esc, G.shape[0]/2 + (500 - 1010)/esc, fila))   # más puntos en la cabeza (el cierre se acerca al rostro)
     p, _ = stipple.voronoi(d, n, 30, 3)
     b = G[np.clip(p[:, 1].astype(int), 0, G.shape[0]-1), np.clip(p[:, 0].astype(int), 0, G.shape[1]-1)]
-    esc = 1320/G.shape[0]
     return np.c_[(p[:, 0] - G.shape[1]/2)*esc, (p[:, 1] - G.shape[0]/2)*esc, np.clip(0.25 + 0.9*b, 0, 1)]
-ESTATUA = cache("estatua", estatua)
+ESTATUA = cache("estatua_rostro", lambda: estatua(26000))
 
 def disco_liso(n, seed, borde=0.35):
     """Cuerpo simple (planeta/luna): relleno + borde marcado."""
@@ -175,12 +177,18 @@ def estatua_con_nombre():
     S = ESTATUA.copy(); S[:, 0] += CX; S[:, 1] += 1010
     S = S[S[:, 1] < PERG_Y - 30]                                        # los pies quedan detrás de la cinta
     P = pergamino("GALILEO GALILEI", seed=2); P[:, 0] += CX; P[:, 1] += PERG_Y
-    return np.r_[S, P]
-EST_P = estatua_con_nombre()
-def est(t0):
-    """Estatua con un acercamiento lento mientras se lee (que nunca quede quieta)."""
-    return estado([Cuerpo(EST_P, 1.0, centro=(0, 0), brillo=1.0)],
-                  cam=lambda t: (1 + 0.07*ss(t0, t0 + 6, t), CX, 900))
+    return np.r_[S, P], len(P)                                         # el pergamino al final
+EST_P, N_PERG = estatua_con_nombre()
+ROSTRO = (585.0, 440.0)
+def est(t0, t1, z1, destino):
+    """Estatua mientras se leen los textos: la cámara se sigue acercando al rostro; el pergamino queda fijo."""
+    def pos(t):
+        Q = EST_P.copy(); S = Q[:-N_PERG]
+        z = acercar(t, t0, t1, ROSTRO, destino, z1); S[:, 0], S[:, 1] = aplicar(S[:, 0], S[:, 1], *z)
+        S[:, 2] *= z[0]**0.9                                               # de cerca los puntos se separan: más brillo
+        S[:, 2] *= 1 - ss(PERG_Y - 110, PERG_Y - 50, S[:, 1])                 # el cuerpo pasa por detrás de la cinta
+        return completar(Q)
+    return pos
 
 # telescopio -> lo que vio (Júpiter y sus lunas) -> zoom a Júpiter: un mismo plano, distintas vistas
 ANG = np.radians(30)
@@ -218,7 +226,8 @@ def telescopio_y_jupiter(t):
 def pista_jupiter():
     return [tuple(camara(J_W[None], *cam_tel(f/FPS))[0]) if T_SALE[1] - 0.6 < f/FPS < T_ZOOM[0] + 0.4 else None for f in range(int(DUR*FPS))]
 
-ESTADOS = [GEO, est(T_EST1), telescopio_y_jupiter, telescopio_y_jupiter, HELIO, est(T_EST2)]
+ESTADOS = [GEO, est(T_EST1 - 0.6, TRANS[1][0] + 0.6, 1.35, (560, 640)), telescopio_y_jupiter, telescopio_y_jupiter, HELIO,
+           est(T_EST2 - 0.4, DUR - 0.6, 2.3, (540, 700))]
 # emparejamiento por Hilbert (al momento en que cada estado se ve completo). El estado 3 es el mismo que el 2
 # (cambio instantáneo e invisible) solo para reordenar los puntos con Júpiter ya grande: así la salida al
 # heliocéntrico es ordenada.
