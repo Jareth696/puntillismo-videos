@@ -32,9 +32,9 @@ TEXTO_GANCHO_2 = (1.1, 4.6)  # segunda línea
 # ---------- textos ----------
 TEXTO_ENTRADA = 0.8        # los puntos se juntan en ~0,8 s (ver textos.py)
 TEXTO_SALIDA = 0.9         # se disuelven flotando en ~0,9 s
-TAM_TITULO = 42            # px; título arriba (y≈230 / 295 para dos líneas)
-TAM_ETIQUETA = 34          # px; etiquetas abajo (y≈1430)
-TAM_CIERRE = 36
+TAM_TITULO = 60            # px; título arriba (legible en celular, también con presbicia)
+TAM_ETIQUETA = 48          # px; etiquetas
+TAM_CIERRE = 56
 
 # ---------- puntos ----------
 CONTRASTE_BASE = 0.24      # textura: 0 = original (zonas oscuras vacías), 0.38 = muy suave; 0.24 = aprobado
@@ -54,3 +54,11 @@ LECTURA_EXTRA = 0.6         # s por cada otro elemento con texto en pantalla (et
 def tiempo_lectura(*lineas, extra=0):
     palabras = sum(len(l.split()) for l in lineas)
     return LECTURA_BASE + LECTURA_PALABRA*palabras + LECTURA_EXTRA*extra
+
+# ---------- legibilidad en celular y zonas seguras de Reels ----------
+# Letras de ~3 mm en un celular común (60 px de 1920). Fuente Inter Regular (no la extrafina) y más puntos por letra.
+# Arriba (y < 230) tapa la barra de la app; abajo (y > 1500) tapan el usuario, la descripción y los botones.
+ZONA_ARRIBA = 230
+ZONA_ABAJO = 1500
+TITULO_Y1, TITULO_Y2 = 300, 385      # las dos líneas de los títulos de arriba
+ANCHO_TEXTO_MAX = 960                # si una línea no entra, se achica sola

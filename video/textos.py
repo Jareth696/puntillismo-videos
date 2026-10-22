@@ -13,8 +13,10 @@ from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage
 
 W, H, FPS = 1080, 1920, 24
-ESPACIADO = 0.32          # espacio entre letras (proporción del tamaño)
-FUENTE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "letras", "Inter-ExtraLight.otf")
+ESPACIADO = 0.14          # espacio entre letras (proporción del tamaño)
+DENSIDAD = 0.9            # puntos por letra (más = trazo más firme)
+ANCHO_MAX = 960           # px: una línea más ancha se achica sola
+FUENTE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "letras", "Inter-Regular.otf")
 ss = lambda a, b, x: (lambda t: t*t*(3-2*t))(np.clip((x-a)/(b-a), 0, 1))
 
 @dataclass
@@ -32,13 +34,17 @@ class Texto:
     pista: list = None        # posiciones (x, y) por cuadro calculadas desde el video original (más confiable)
     anillo: float = 0         # radio de un anillo de puntos alrededor del objeto seguido (0 = sin anillo)
 
-def puntos_de_texto(t: Texto, densidad=0.55, seed=0):
-    """Máscara del texto con espaciado amplio -> puntos (muestreo por la máscara, sin grumos)."""
+def puntos_de_texto(t: Texto, densidad=None, seed=0):
+    """Máscara del texto -> puntos (muestreo por la máscara, sin grumos). Si no entra en ANCHO_MAX, se achica."""
+    densidad = DENSIDAD if densidad is None else densidad
     s = 3                                                          # supermuestreo para trazos finos
     f = ImageFont.truetype(FUENTE, t.tam*s)
     track = int(t.tam*s*ESPACIADO)                                  # espaciado entre letras
     anchos = [f.getbbox(c)[2] - f.getbbox(c)[0] if c != " " else t.tam*s*0.35 for c in t.texto]
     total = int(sum(anchos) + track*(len(t.texto)-1)) + 8
+    if total/s > ANCHO_MAX and t.tam > 12:
+        from dataclasses import replace
+        return puntos_de_texto(replace(t, tam=int(t.tam*ANCHO_MAX/(total/s))), densidad, seed)
     im = Image.new("L", (total, int(t.tam*s*1.5))); d = ImageDraw.Draw(im); x = 4
     for c, a in zip(t.texto, anchos):
         if c != " ": d.text((x - f.getbbox(c)[0], 0), c, font=f, fill=255)
@@ -80,7 +86,7 @@ def splat(buf, x, y, w):
 # Debajo de los títulos de arriba nace una línea de puntos desde un rombo central; un punto guía la recorre; si entra
 # una segunda línea, la regla baja deslizándose y se estira; al salir el texto se recoge hacia el rombo.
 SELLO_ZONA = 450            # textos con y menor a esto (y que no siguen a un objeto) son "títulos de arriba"
-SELLO_SEPARA = 50           # distancia de la regla bajo la última línea
+SELLO_SEPARA = 62           # distancia de la regla bajo la última línea
 def _linea_h(capa, x0, x1, y, w, paso=4.0):
     if x1 - x0 < 1: return
     x = np.arange(x0, x1, paso); splat(capa, x, np.full(len(x), y), np.full(len(x), w))
@@ -110,7 +116,20 @@ def sello_titulo(capa, t, titulos):
     _rombo(capa, cx, y, 11*e, e); _punto(capa, cx - m - 10, y, 2.5, e); _punto(capa, cx + m + 10, y, 2.5, e)
     _punto(capa, cx + m*0.92*np.sin(t*2.2), y, 4.5, 2.6*e)                      # punto guía
 
+def a_zona_segura(textos):
+    """Los títulos de arriba se escribieron a varias alturas con letra chica: se llevan a la zona segura (debajo de la
+    barra de la app) con el espacio de la letra grande. Un título es '2ª línea' si a la vez hay otro más arriba."""
+    from dataclasses import replace
+    import estilo as E
+    arriba = [t for t in textos if not t.seguir and t.y < SELLO_ZONA]
+    def mover(t):
+        if t not in arriba: return t
+        segunda = any(o.y < t.y and o.t0 < t.t1 and t.t0 < o.t1 for o in arriba if o is not t)
+        return replace(t, y=E.TITULO_Y2 if segunda else E.TITULO_Y1)
+    return [mover(t) for t in textos]
+
 def componer(entrada, salida, textos, crf=15, sello=True):
+    textos = a_zona_segura(textos)
     rng = np.random.default_rng(7)
     datos = []
     for k, t in enumerate(textos):

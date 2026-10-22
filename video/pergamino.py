@@ -31,7 +31,7 @@ def _texto(texto, tam, rng, dens=0.6):
     p -= [m.shape[1]/2, m.shape[0]*0.42]
     return np.c_[p, np.ones(n)], m.shape[1]
 
-def pergamino(texto, tam=42, alto=96, curva=16, seed=0):
+def pergamino(texto, tam=50, alto=108, curva=16, seed=0):
     rng = np.random.default_rng(seed)
     T, ancho_txt = _texto(texto, tam, rng)
     a = ancho_txt/2 + 70                                         # medio ancho de la cinta central

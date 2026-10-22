@@ -38,7 +38,7 @@ def linea(p0, p1, paso=3.0, b=0.85, curva=0.0):
     return np.c_[pts, np.full(len(pts), b)]
 
 # ---------- estado 0: retrato con su nombre (pergamino) ----------
-PERG_Y = 1680; ROSTRO = (500.0, 770.0)
+PERG_Y = 1430; ROSTRO = (500.0, 770.0)          # el nombre queda sobre la zona que tapa Reels (y > 1500)
 def retrato_con_nombre():
     R = EL.retrato(); R = R[R[:, 1] < PERG_Y - 70]
     P = pergamino("CHARLES DARWIN", seed=3); P[:, 0] += 540; P[:, 1] += PERG_Y
@@ -55,8 +55,8 @@ xs_marcha = 120 + (cxs - cxs.min())/(cxs.max() - cxs.min())*840
 S_MARCHA = a_n(np.concatenate([colocar(f, 760/alto_max, x, 1260) for f, x in zip(FIG, xs_marcha)]), seed=2)
 
 # ---------- estado 2: cladograma (ancestro común) ----------
-PUNTAS = [(160, 860), (350, 860), (540, 860), (730, 860), (920, 860)]
-NODOS = [(540, 1500), (560, 1360), (640, 1240), (720, 1120), (800, 1000)]     # raíz y bifurcaciones
+PUNTAS = [(160, 760), (350, 760), (540, 760), (730, 760), (920, 760)]
+NODOS = [(540, 1400), (560, 1260), (640, 1140), (720, 1020), (800, 900)]     # raíz y bifurcaciones
 def cladograma():
     ramas = [linea(NODOS[0], NODOS[1], b=0.9)]
     for k in range(4):                                         # cada nodo: una rama a una punta y otra al siguiente nodo
@@ -82,7 +82,7 @@ def arbol():
         if prof < 7:
             for d in (-1, 1):
                 rama(q, ang + d*rng.uniform(0.28, 0.6), largo*rng.uniform(0.66, 0.8), prof + 1)
-    rama((540, 1560), 0.0, 260, 0)
+    rama((540, 1460), 0.0, 260, 0)
     partes, orden = [], []
     for p, q, prof in segs:
         L = linea(p, q, paso=2.6 + 0.4*prof, b=max(0.95 - 0.08*prof, 0.4), curva=rng.normal(0, 6))
@@ -101,12 +101,12 @@ ESTADOS = [ordenar(S_RETRATO), ordenar(S_MARCHA), ordenar(S_CLADO, D_CLADO), ord
 
 # guion: (t inicio de la transición, duración) hacia el estado k
 TRANS = [(4.6, 2.2), (9.8, 3.2), (16.4, 3.0), (21.6, 2.2)]
-DUR = 27.4
+DUR = 28.2
 TOMAS = {0: (E.GANCHO_INICIO + 1.0, TRANS[0][0] + 0.6), 4: (TRANS[3][0] + 0.6, DUR - 0.4)}   # tomas del retrato (se acerca)
 def vista(k, S, t):
     """Estado k en el instante t: en las tomas del retrato la cámara se acerca al rostro; el pergamino queda fijo."""
     if k not in TOMAS: return S
-    z = acercar_toma(t, *TOMAS[k], ROSTRO, (540, 820)); S = S.copy(); m = S[:, 3] < 0.5
+    z = acercar_toma(t, *TOMAS[k], ROSTRO, (540, 900)); S = S.copy(); m = S[:, 3] < 0.5
     S[m, 0], S[m, 1] = aplicar(S[m, 0], S[m, 1], *z); S[m, 2] *= z[0]**0.9
     S[m, 2] *= 1 - ss(PERG_Y - 120, PERG_Y - 60, S[m, 1])                 # pasa por detrás de la cinta
     return S
@@ -149,10 +149,11 @@ def textos():
     T += [Texto("¿ASÍ EVOLUCIONAMOS?", 6.4, 9.6, y=330, tam=E.TAM_TITULO),
           Texto("NO VENIMOS DEL MONO", 11.6, 16.0, y=330, tam=E.TAM_TITULO),
           Texto("COMPARTIMOS UN ANCESTRO", 12.3, 16.2, y=395, tam=E.TAM_TITULO),
-          Texto("ANCESTRO COMÚN", 12.6, 16.0, y=1570, tam=E.TAM_ETIQUETA, brillo=0.7),
+          Texto("ANCESTRO COMÚN", 12.6, 16.0, y=1470, tam=E.TAM_ETIQUETA, brillo=0.7),
           Texto("LA VIDA ES UN ÁRBOL", 18.4, 21.4, y=230, tam=E.TAM_TITULO),
-          Texto("TODOS SOMOS", 22.4, DUR - 1.3, y=230, tam=E.TAM_CIERRE),
-          Texto("UNA MISMA FAMILIA", 23.0, DUR - 1.2, y=290, tam=E.TAM_CIERRE)]
+          # sobre su rostro, en tercera persona: si no, parecería una frase de Darwin
+          Texto("DARWIN NOS MOSTRÓ", 22.4, DUR - 1.3, y=230, tam=E.TAM_CIERRE),
+          Texto("QUE SOMOS UNA FAMILIA", 23.0, DUR - 1.2, y=290, tam=E.TAM_CIERRE)]
     return T
 
 def fb(f): return frame(f/FPS).tobytes()

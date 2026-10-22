@@ -136,3 +136,19 @@ muy limpios (un objeto sobre fondo negro). El puntillismo se luce con **un objet
   no al revés (en el agua las etapas tienen largos distintos: `SEGS_AGUA`).
 - Remate con giro: los aros/espirales alrededor del protagonista van **en 3D** (inclinados, con perspectiva, la parte
   de atrás pasa detrás), nunca como un círculo plano.
+
+## Legibilidad en celular (regla del motor, Darwin v final)
+- Letra **grande y firme**: títulos de 60 px, etiquetas de 48 px y cierre de 56 px (unos 3 mm en un celular), con
+  **Inter Regular** y más puntos por letra. Tiene que poder leerla alguien con presbicia de un vistazo.
+- **Zonas seguras de Reels:** nada importante arriba de y=230 (barra de la app) ni debajo de y=1500 (usuario,
+  descripción, botones). Los títulos van solos a y=300 / 385 (`a_zona_segura`); una línea que no entra se achica sola.
+- Al ubicar elementos (pergamino, etiquetas, indicador, raíces de diagramas), dejarlos por encima de y≈1480.
+
+## Texto sobre una persona = se lee como cita suya
+- Sobre el rostro de alguien solo va texto **en tercera persona** ("DARWIN NOS MOSTRÓ…", "EN 1633 LO CONDENARON")
+  o una **cita real suya entre comillas**. Las frases generales ("TODOS SOMOS UNA FAMILIA") van sobre la imagen de la
+  idea, no sobre su cara.
+
+## Imágenes: las necesarias, y más si suman
+- Desde la PC se pueden bajar imágenes libres (Wikimedia Commons, NASA, Pixabay, Unsplash, Pexels) y ponerlas en la
+  carpeta `src/` del video. Usar las que hagan falta para explicar; agregar elementos si dan dinamismo sin quitar atención.
