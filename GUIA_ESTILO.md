@@ -117,3 +117,12 @@ muy limpios (un objeto sobre fondo negro). El puntillismo se luce con **un objet
 ## Viaje en el tiempo (ciclo del agua v10)
 - Para "pasaron millones de años": un remolino que gira alrededor del protagonista, con brazos en espiral y símbolos
   (ecuaciones, H₂O, π, ∞, galaxias pequeñas) que salen hacia la cámara, creciendo y girando. Justo en el gancho.
+
+## Regla del motor: tiempo de lectura según lo que hay que mirar (ciclo del agua v11)
+- El espectador reparte la atención entre el texto de arriba, la etiqueta de abajo y la imagen en movimiento.
+  No es lo mismo la Luna (solo puntos y un nombre) que una escena con frase arriba + etapa abajo + acción.
+- Cada texto dura `E.tiempo_lectura(*lineas, extra=n)`: 1,2 s + 0,38 s por palabra + 0,6 s por cada otro
+  elemento con texto en pantalla (etiqueta, contador, rótulo). **La escena se alarga para que entre el texto**,
+  no al revés (en el agua las etapas tienen largos distintos: `SEGS_AGUA`).
+- Remate con giro: los aros/espirales alrededor del protagonista van **en 3D** (inclinados, con perspectiva, la parte
+  de atrás pasa detrás), nunca como un círculo plano.

@@ -68,8 +68,10 @@ def mar(t):
 # ---------- guion ----------
 ETAPAS = ["EVAPORACIÓN", "CONDENSACIÓN", "PRECIPITACIÓN", "ESCORRENTÍA"]
 T0 = E.ACCION_INICIO; SEG = getattr(E, "SEG_AGUA", 4.6)                        # etapas más largas: movimientos con calma
-T_EV, T_CO, T_PR, T_ES = T0, T0 + SEG, T0 + 2*SEG, T0 + 3*SEG
-T_FIN = T_ES + 3.0                                      # +0.4 s: pausa flotando en el mar
+SEGS = getattr(E, "SEGS_AGUA", [SEG]*3)                 # largo de cada etapa (puede ser distinto)
+INICIOS = list(np.cumsum([T0] + list(SEGS)))
+T_EV, T_CO, T_PR, T_ES = INICIOS
+T_FIN = T_ES + getattr(E, "ESC_AGUA", 3.0)                                     # +0.4 s: pausa flotando en el mar
 DUR = T_FIN + E.CIERRE
 X_MAR = 400.0
 ATERRIZA = (790.0, -560.0)                              # punto de la ladera donde cae la gota
@@ -138,7 +140,7 @@ def llegar(P, t0, seed, t, dur=0.9):
 
 def indicador(buf, t):
     if t < T0 - 0.6 or t > T_FIN + 0.6: return
-    e = ss(T0 - 0.6, T0, t)*(1 - ss(T_FIN, T_FIN + 0.6, t)); pos = (t - T0)/SEG
+    e = ss(T0 - 0.6, T0, t)*(1 - ss(T_FIN, T_FIN + 0.6, t)); pos = (t - T0)/SEG if t < T0 else float(np.interp(t, INICIOS + [T_FIN], [0, 1, 2, 3, 4]))
     for k in range(4):
         x = W/2 + (k - 1.5)*44; cerca = np.clip(1 - abs(pos - k - 0.18), 0, 1)**2
         r = 2.5 + 9*cerca; a = np.linspace(0, 2*np.pi, 28, endpoint=False)
@@ -198,7 +200,7 @@ def textos():
     from textos import Texto
     T = textos_gancho("ESTA GOTA DE AGUA", "TIENE MILLONES DE AÑOS")
     for k, nombre in enumerate(ETAPAS):
-        t0 = T0 + k*SEG - 0.1
+        t0 = INICIOS[k] - 0.1
         T.append(Texto(nombre, t0, t0 + (E.ETAPA_QUIETA + 1.2 if k < 3 else 1.8), y=1660, tam=E.TAM_ETIQUETA))
     T += [Texto("Y SIGUE VIAJANDO", T_FIN - E.REMATE_TEXTO_ANTES, DUR - 1.3, y=230, tam=E.TAM_CIERRE),
           Texto("EL CICLO DEL AGUA", T_FIN + 0.1, DUR - 1.2, y=290, tam=E.TAM_CIERRE)]

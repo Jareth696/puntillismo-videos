@@ -43,3 +43,14 @@ BORDES = 6
 PUNTOS_MAX = 60000
 TONO_MIN = 0.04            # brillo mínimo de un punto: las sombras quedan oscuras
 CENIZA = 0.035             # luz tenue en la parte oscura (se ve la silueta sin competir con lo iluminado)
+
+
+# ---------- tiempo de lectura (regla del motor) ----------
+# El espectador reparte la atención entre el texto de arriba, la etiqueta de abajo y la imagen en movimiento.
+# Cada texto dura según cuántas palabras tiene y cuántas otras cosas hay que mirar a la vez.
+LECTURA_BASE = 1.2          # s para notar el texto
+LECTURA_PALABRA = 0.38      # s por palabra
+LECTURA_EXTRA = 0.6         # s por cada otro elemento con texto en pantalla (etiqueta de etapa, contador, rótulo)
+def tiempo_lectura(*lineas, extra=0):
+    palabras = sum(len(l.split()) for l in lineas)
+    return LECTURA_BASE + LECTURA_PALABRA*palabras + LECTURA_EXTRA*extra

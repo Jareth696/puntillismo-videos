@@ -10,7 +10,13 @@ AQUI = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, AQUI); sys
 import estilo as E
 MAR_EXTRA = 4.2                                    # segundos de más en el mar (el reloj de arena)
 E.ACCION_INICIO = E.ACCION_INICIO + MAR_EXTRA
-E.SEG_AGUA = 5.0                                   # etapas un poco más largas: el viaje toma su tiempo
+# cada etapa dura lo que hace falta para leer su texto mientras se mira la imagen y la etiqueta de abajo
+TX_EV = ("EL SOL LA CALIENTA", "Y SE VUELVE VAPOR"); TX_CO = ("ARRIBA SE ENFRÍA", "Y VUELVE A SER GOTA")
+TX_NUBE = ("VIAJA CON LA NUBE",); TX_ES = ("Y EN SEMANAS", "VUELVE AL MAR")
+L_EV, L_CO, L_NUBE, L_ES = (E.tiempo_lectura(*TX_EV, extra=1), E.tiempo_lectura(*TX_CO, extra=1),
+                            E.tiempo_lectura(*TX_NUBE, extra=1), E.tiempo_lectura(*TX_ES, extra=1))
+E.SEGS_AGUA = [L_EV + 0.6, L_CO + L_NUBE + 0.6, 5.0]
+E.ESC_AGUA = L_ES + 0.4
 import ciclo_agua6 as C6
 import ciclo_agua5 as C5
 import ciclo_agua2 as B
@@ -28,7 +34,7 @@ VUELTAS = 3
 T_CALOR = (T_EV - 0.4, T_EV + 1.4)                 # la gota se agita antes de abrirse
 T_ABRE = T_EV + 1.0                                # anillo que se abre: líquido -> vapor
 T_CIERRA = (T_CO + 0.5, T_CO + 1.9)                # anillo que se cierra: vapor -> gota
-T_DIAS = (T_CO + 2.3, T_PR + 0.3)                  # reloj de los días en la nube
+T_DIAS = (T_CO + 0.4 + L_CO, T_PR + 0.3)                  # reloj de los días en la nube
 
 # ---------- las olas en cámara rápida mientras pasan los años ----------
 _mar = C5.mar
@@ -65,9 +71,9 @@ def galaxia(n=500, seed=0):
 GALAX = [galaxia(seed=k) for k in range(5)]
 
 T_VIAJE = (0.4, 3.9)                              # mientras se forma la gota y se lee el gancho
-NV = 46                                           # símbolos/galaxias que salen en espiral
-v_t0 = np.sort(rng.uniform(T_VIAJE[0], T_VIAJE[1] - 0.9, NV)); v_a0 = rng.uniform(0, 2*np.pi, NV)
-v_g = rng.integers(0, len(GLIFOS), NV); v_gal = rng.uniform(size=NV) < 0.18; v_rot = rng.uniform(-1, 1, NV)
+NV = 72                                           # símbolos/galaxias que salen en espiral
+v_t0 = np.sort(rng.uniform(T_VIAJE[0], T_VIAJE[1] - 0.9, NV)); v_a0 = np.arange(NV)*2.39996 + rng.normal(0, 0.2, NV)   # ángulo áureo: llenan toda la pantalla parejo
+v_g = np.arange(NV) % len(GLIFOS); v_gal = rng.uniform(size=NV) < 0.18; v_rot = rng.uniform(-1, 1, NV)
 BR = 3; br_k = np.linspace(0, 1, 260)               # brazos del espiral (estelas de puntos)
 def viaje(buf, t, P):
     g = ss(T_VIAJE[0], T_VIAJE[0] + 0.5, t)*(1 - ss(T_VIAJE[1] - 0.5, T_VIAJE[1], t))
@@ -173,17 +179,33 @@ def reloj_dias(buf, t, P):
         zs(buf, gx + R*k*np.cos(a), cy + R*k*np.sin(a), np.full(40, w*g))
 
 # ---------- remate: círculo de "ciclo" alrededor de la gota ----------
+ARO = np.linspace(0, 2*np.pi, 520, endpoint=False)
+def aro_3d(buf, cx, cy, R, inclina, giro, cabeza, g, esc_gota):
+    """Aro en 3D alrededor de la gota: perspectiva, la parte de atrás pasa detrás de la gota, cola de cometa y flecha."""
+    X = R*np.cos(ARO); Y = R*np.sin(ARO)*np.cos(inclina); Z = R*np.sin(ARO)*np.sin(inclina)
+    c, s_ = np.cos(giro), np.sin(giro); X, Y = X*c - Y*s_, X*s_ + Y*c
+    f = 1000/(1000 - Z)                                                  # perspectiva
+    x, y = cx + X*f, cy + Y*f
+    u = ((cabeza - ARO) % (2*np.pi))/(2*np.pi)                           # 0 en la cabeza, crece hacia la cola
+    w = g*0.95*(1 - u)**1.3*f**2*np.where(Z < 0, 0.45, 1.0)
+    detras = (Z < 0) & (((x - cx)/(205*esc_gota))**2 + ((y - cy - 25*esc_gota)/(265*esc_gota))**2 < 1)
+    w = np.where(detras, 0.0, w)
+    for d in (-1.2, 0, 1.2):                                             # grosor (más grueso adelante)
+        zs(buf, x + d*f*np.cos(ARO), y + d*f*np.sin(ARO), w*(0.6 if d else 1.0))
+    i = int(np.argmin(u)); j = (i - 6) % len(ARO)                        # flecha en la cabeza
+    if not detras[i]:
+        tx, ty = x[i] - x[j], y[i] - y[j]; L = np.hypot(tx, ty) + 1e-6; tx, ty = tx/L, ty/L
+        k = np.linspace(0, 1, 22); tam = 30*f[i]
+        for lado in (-1, 1):
+            zs(buf, x[i] - (tx*tam - lado*ty*tam*0.7)*k, y[i] - (ty*tam + lado*tx*tam*0.7)*k, np.full(22, 1.1*g*f[i]**2))
+
 def ciclo(buf, t, P):
-    g = ss(T_FIN + 0.9, T_FIN + 1.6, t)
+    """Remate: dos aros en 3D giran alrededor de la gota (el ciclo), vistos en ángulo, no planos."""
+    g = ss(T_FIN + 0.6, T_FIN + 1.4, t)
     if g < 0.01: return
-    gx, gy, _, _ = camino(t); cy = P(gy); R = 270
-    a0 = t*1.4; a = a0 + np.linspace(0, 2*np.pi*0.8*g, 240)
-    zs(buf, gx + R*np.cos(a), cy + R*np.sin(a), np.full(240, 0.7))
-    tip = a[-1]; d = np.array([np.cos(tip + np.pi/2), np.sin(tip + np.pi/2)])     # punta de flecha
-    px, py = gx + R*np.cos(tip), cy + R*np.sin(tip); k = np.linspace(0, 1, 18)
-    for lado in (-1, 1):
-        n = np.array([np.cos(tip), np.sin(tip)])*lado
-        zs(buf, px - (d[0]*22 - n[0]*16)*k, py - (d[1]*22 - n[1]*16)*k, np.full(18, 0.8*g))
+    gx, gy, esc, _ = camino(t); cy = P(gy)
+    aro_3d(buf, gx, cy, 330, 1.18 + 0.1*np.sin(t*0.7), -0.38 + 0.08*np.sin(t*0.5), t*1.7, g, esc)
+    aro_3d(buf, gx, cy, 300, 1.28 + 0.08*np.sin(t*0.6 + 1), 0.55 + 0.06*np.sin(t*0.4), -t*1.3 + 2.0, g*0.7, esc)
 
 # ---------- todo junto ----------
 _extra6 = C5.EXTRA
@@ -205,14 +227,14 @@ def textos():
     T = C6.textos()
     TT = E.TAM_TITULO
     T += [Texto("EN EL MAR PUEDE ESPERAR", T_RA[1] - 0.6, T_RA[3] - 0.4, y=230, tam=TT),
-          Texto("EL SOL LA CALIENTA", T_EV - 0.2, T_EV + 2.4, y=230, tam=TT),
-          Texto("Y SE VUELVE VAPOR", T_EV + 0.4, T_EV + 2.5, y=295, tam=TT),
-          Texto("ARRIBA SE ENFRÍA", T_CO, T_CO + 2.0, y=230, tam=TT),
-          Texto("Y VUELVE A SER GOTA", T_CO + 0.5, T_CO + 2.1, y=295, tam=TT),
-          Texto("VIAJA CON LA NUBE", T_DIAS[0], T_DIAS[1] - 0.2, y=230, tam=TT),
-          Texto("CAE COMO LLUVIA", T_PR + 0.6, T_PR + 3.4, y=230, tam=TT),
-          Texto("Y EN SEMANAS", T_ES, T_FIN + 0.2, y=230, tam=TT),
-          Texto("VUELVE AL MAR", T_ES + 0.5, T_FIN + 0.3, y=295, tam=TT)]
+          Texto(TX_EV[0], T_EV - 0.2, T_EV - 0.2 + L_EV, y=230, tam=TT),
+          Texto(TX_EV[1], T_EV + 0.4, T_EV - 0.1 + L_EV, y=295, tam=TT),
+          Texto(TX_CO[0], T_CO + 0.1, T_CO + 0.1 + L_CO, y=230, tam=TT),
+          Texto(TX_CO[1], T_CO + 0.6, T_CO + 0.2 + L_CO, y=295, tam=TT),
+          Texto(TX_NUBE[0], T_DIAS[0], T_DIAS[1] - 0.2, y=230, tam=TT),
+          Texto("CAE COMO LLUVIA", T_PR + 0.6, T_PR + 0.6 + E.tiempo_lectura("CAE COMO LLUVIA", extra=1), y=230, tam=TT),
+          Texto(TX_ES[0], T_ES - 0.1, T_FIN - 0.5, y=230, tam=TT),
+          Texto(TX_ES[1], T_ES + 0.4, T_FIN - 0.4, y=295, tam=TT)]
     return T
 
 frame = C6.frame
