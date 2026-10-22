@@ -10,6 +10,12 @@
 
 Los valores exactos están en `video/estilo.py`. Todo script nuevo debe importarlo (`import estilo as E`).
 
+## EL GANCHO (lo más importante)
+- Hablarle a la **persona común**, no al especialista: partir de **lo que la mayoría cree o ve** (el mono que se
+  endereza, "el Sol gira alrededor de la Tierra") y luego **aclararlo**. La corrección de un mito engancha más que un dato.
+- Una pregunta o afirmación corta, directa y llamativa, en 2 líneas como máximo, mientras se forma la imagen.
+- Lo visual del gancho debe ser la creencia popular misma (la imagen que todos tienen en la cabeza).
+
 ## REGLA DE INICIO (permanente)
 **Fondo negro. Puntos dispersos por toda la pantalla se juntan rápido (en ~2 s, escalonados) y forman el elemento
 principal, mientras al mismo tiempo se forma el texto de contexto (gancho).** Como la entrada de Tesla: desde el primer
