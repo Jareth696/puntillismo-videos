@@ -1,52 +1,62 @@
-# Puntillismo y Matrix con código
+# Puntillismo con código
 
-Videos verticales (1080x1920) hechos 100 % con Python: cada fotograma se dibuja con puntos (numpy) y se une con ffmpeg.
+Videos verticales para Reels (1080x1920) hechos 100 % con Python: cada fotograma se dibuja con puntos (numpy) y se une
+con ffmpeg. No hace falta una PC potente: solo tiempo de cálculo.
 
-## Requisitos
-- Python 3 con `pip install -r requirements.txt` (numpy, pillow, scipy)
-- ffmpeg
-- Para Matrix: fuente JetBrains Mono Bold (o cambiar la ruta `FONT` por otra fuente monoespaciada)
+## Videos finales (listos para publicar) → `finales/`
 
-## Proyectos
+| Archivo | Tema |
+|---|---|
+| `01_luna_8_fases.mp4` | Las 8 fases de la Luna |
+| `02_ciclo_del_agua.mp4` | El ciclo del agua: una gota de millones de años |
+| `03_darwin_evolucion.mp4` | Darwin: no venimos del mono, compartimos un ancestro |
+| `04_galileo.mp4` | Galileo: ¿el Sol gira alrededor de la Tierra? |
 
-### `hoja/` — Hoja que viaja y cae bajo la lluvia
-- `hoja_bn5.py`: puntillismo blanco y negro. Hoja 3D, 3 escenas (árbol, vacío, dos árboles, vacío), montañas con paralaje, viento, lluvia, relámpago.
-  `cd hoja && python3 hoja_bn5.py salida.mp4`
-- `matrix.py`: la misma escena convertida a 0 y 1 (sale en gris; el verde se aplicó con el filtro de ffmpeg de abajo).
+## Instalar (Windows, Mac o Linux)
 
-### `tesla/` — Rostro de Tesla que se transforma en bombilla
-- `stipple.py`: stippling de Voronoi ponderado (reparte puntos según una foto) + orden de Hilbert para emparejar formas.
-- `formas.py`: mapas de densidad (retrato desde `src/tesla.jpg` con máscara de silueta; bombilla dibujada con código).
-- `tesla.py`: animación en puntillismo B/N. `cd tesla && python3 tesla.py salida.mp4`
-- `matrix_tesla.py`: versión Matrix verde. `cd tesla && python3 matrix_tesla.py salida.mp4`
-- Foto: Napoleon Sarony, ca. 1890, dominio público (Wikimedia Commons).
+1. **Python 3.10 o más nuevo**: https://www.python.org/downloads/ (en Windows, marcar "Add Python to PATH").
+2. **ffmpeg**:
+   - Windows: `winget install ffmpeg` (o descargar de https://www.gyan.dev/ffmpeg/builds/ y agregar `bin` al PATH)
+   - Mac: `brew install ffmpeg`
+   - Linux: `sudo apt install ffmpeg`
+3. **Librerías**: en la carpeta del proyecto, `pip install -r requirements.txt`
 
-Consejo: para pruebas rápidas, el segundo argumento limita los fotogramas: `python3 tesla.py prueba.mp4 48` (2 s).
+Las letras ya vienen en `video/letras/` (licencias libres en `video/letras/licencias/`). No hay que instalar nada más.
 
-### Verde Matrix sobre un video gris
+## Generar los videos
+
 ```
-ffmpeg -i entrada.mp4 -vf "format=rgb24,lutrgb=r='255*pow(val/255\,3.2)*0.75':g='255*min(1\,pow(val/255\,0.9)*1.08)':b='255*pow(val/255\,2.6)*0.45',format=yuv420p" -c:v libx264 -crf 16 salida.mp4
+python hacer_finales.py                 # los 4 videos → finales/
+python hacer_finales.py galileo         # solo uno (luna, agua, darwin, galileo)
 ```
 
-### `video/` — Puntillismo desde un video real
-`video_stipple.py` convierte cualquier video en puntos con coherencia temporal (los puntos se mueven, no parpadean).
-- `--analizar`: solo muestra un informe (cortes de escena, tramos sin objeto, destellos) sin renderizar.
-- `--seguir`: encuadre automático 9:16 que sigue al objeto principal (ignora destellos) y lo mantiene completo.
-- `--cortes antes` (por defecto): termina antes del primer corte de escena o de que un destello (Sol/reflejo) se vuelva el objeto.
-- `--variable`: cantidad de puntos según el tamaño del objeto. `--estrellas N`: fondo estrellado.
+La primera vez tarda más: convierte las fotos a puntos (Voronoi) y lo guarda en caché (`cache_*.npy`).
+Después, cada video tarda unos minutos (depende de la PC; usa 4 núcleos).
 
-Ejemplo (Luna, NASA Artemis II, dominio público):
+Para probar rápido un tramo, cada script acepta cuántos fotogramas hacer (24 = 1 segundo):
 ```
-python3 video/video_stipple.py flyby_abril.mp4 luna.mp4 --seguir --vel 1.5 --dur 38 --puntos 60000 --variable 0.35 \
-  --estrellas 220 --negro 0.18 --gamma 2.2 --bordes 8 --tono_min 0.15 --brillo 4
+cd galileo
+python galileo.py prueba.mp4 48 prueba_con_textos.mp4
 ```
-Fuente: https://images.nasa.gov/details/lunarflyby_1min_2160p30 (NASA Scientific Visualization Studio).
 
-Las mejores fuentes: fondo negro u oscuro, luz lateral con sombras, un objeto principal claro, movimiento moderado.
+## Estructura
 
-### `luna/` — Las 8 fases de la Luna (híbrido)
-`fases8.py`: foto real de la Luna llena (NASA, en `src/`) iluminada fase por fase por el script; gancho dinámico,
-ciclo continuo con nombres e indicador de 8 puntos, cierre con la Luna llena. Textos con `video/textos.py`.
+| Carpeta | Qué hay |
+|---|---|
+| `video/` | **El motor**: estilo y tiempos (`estilo.py`), entrada (`formacion.py`), textos y sello de títulos (`textos.py`), pergamino (`pergamino.py`), cámara (`camara.py`), efectos (`efectos.py`), protagonista que viaja (`protagonista.py`), puntillismo desde video real (`video_stipple.py`), letras (`letras/`) |
+| `tesla/` | `stipple.py` (Voronoi + orden de Hilbert, lo usan todos) y el video de Tesla (B/N y Matrix) |
+| `luna/` | Las 8 fases de la Luna |
+| `agua/` | El ciclo del agua (`ciclo_agua7.py` es el final; usa 2 → 3 → 4 → 5 → 6 por debajo) |
+| `darwin/` | Darwin y la evolución |
+| `galileo/` | Galileo |
+| `finales/` | Videos listos para publicar |
 
-## `videos/`
-Versiones aprobadas de cada proyecto.
+## Para hacer videos nuevos
+
+1. Leer **`GUIA_ESTILO.md`** (reglas: gancho, entrada, ritmo, tiempo de lectura, cámara, identidad).
+2. Leer **`BIBLIOTECA.md`** (escenas, efectos y planos ya probados) y elegir qué usar.
+3. Partir de la plantilla más parecida: idea/historia → `darwin/evolucion.py`; personaje + objeto + astronomía →
+   `galileo/galileo.py`; proceso con un protagonista que viaja → `agua/`; fases/luz → `luna/fases8.py`.
+4. Agregar el video a `hacer_finales.py`.
+
+`CONTINUAR.md` tiene el estado del proyecto y las fuentes de imágenes.

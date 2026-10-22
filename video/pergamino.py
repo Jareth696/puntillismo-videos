@@ -6,10 +6,10 @@ El nombre va en mayúsculas con serifa (como las inscripciones de las estatuas).
     from pergamino import pergamino
     P = pergamino("GALILEO GALILEI")      # (n, 3): x, y (centrado en 0,0) y brillo
 """
-import numpy as np
+import os, numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-FUENTE = "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf"
+FUENTE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "letras", "LiberationSerif-Regular.ttf")
 
 def _linea(pts, paso=2.2, b=0.9, jit=0.6, rng=None):
     pts = np.asarray(pts, float); seg = np.hypot(*np.diff(pts, axis=0).T); L = np.r_[0, np.cumsum(seg)]

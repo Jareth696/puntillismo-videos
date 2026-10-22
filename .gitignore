@@ -1,6 +1,7 @@
-cache.npz
 __pycache__/
 *.png
 !tesla/src/*
-__pycache__/
 pruebas/
+trabajo/
+trabajo_log.txt
+cache*.npz

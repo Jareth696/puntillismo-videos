@@ -1,11 +1,11 @@
 """Tesla -> bombilla en estilo Matrix: la escena de puntos (tesla.py) convertida a 0 y 1 verdes, con lluvia digital."""
-import sys, subprocess, numpy as np
+import os, sys, subprocess, numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import tesla as S
 
 CW, CH = 8, 12                                         # celda de cada carácter
 COLS, ROWS = S.W // CW, S.H // CH
-FONT = "/usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Bold.ttf"
+FONT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "video", "letras", "JetBrainsMono-Bold.ttf")
 def glyph(ch):
     im = Image.new("L", (CW, CH)); f = ImageFont.truetype(FONT, 11)
     ImageDraw.Draw(im).text((CW/2, CH/2), ch, font=f, fill=255, anchor="mm"); return np.asarray(im, float)/255

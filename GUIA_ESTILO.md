@@ -1,4 +1,6 @@
-# Guía de estilo (aprobada con `videos/luna_8_fases.mp4` y `videos/hoja_viento.mp4`)
+# Guía de estilo (aprobada con los videos de `finales/`)
+
+**Antes de un video nuevo, leer también `BIBLIOTECA.md`: escenas, efectos y planos ya probados, listos para reusar.**
 
 ## Resumen: así funciona el motor
 1. **Entrada:** puntos dispersos que se juntan rápido y forman el elemento, mientras se forma el texto de contexto.
@@ -27,9 +29,9 @@ instante se nota que todo está hecho de puntos. Código: `video/formacion.py` (
 - Pocos elementos por escena, grandes y bien iluminados.
 
 ## Dos tipos de video
-1. **Transformación en el lugar** (`luna_8_fases.mp4`, Tesla, `darwin_evolucion.mp4`): el elemento se queda quieto y lo que cambia es él
+1. **Transformación en el lugar** (Luna, Tesla, Darwin, Galileo): el elemento se queda quieto y lo que cambia es él
    mismo (fases, forma). No necesita gestos propios.
-2. **Protagonista que viaja** (`ciclo_agua.mp4`, `hoja_viento.mp4`): el elemento recorre entornos y debe "actuar".
+2. **Protagonista que viaja** (ciclo del agua): el elemento recorre entornos y debe "actuar".
    Usar `video/protagonista.py`:
    - se **estira e inclina** hacia donde se mueve; **respira/se mece** cuando flota; **tiembla al llegar** y se asienta;
    - **cámara un poco más cerca** toda la acción y **zoom puntual** en momentos clave (p. ej. al llegar a la montaña),
@@ -54,6 +56,12 @@ instante se nota que todo está hecho de puntos. Código: `video/formacion.py` (
 - Fuente fina (Inter ExtraLight), mayúsculas espaciadas, un poco más tenues que la imagen.
 - Se forman juntando puntos (~0,8 s) y se disuelven flotando (~0,9 s).
 - Pocos y breves: gancho arriba, etiquetas abajo y pequeñas, remate arriba. Lo principal es la imagen.
+- **Cortos y concisos**: mejor dos líneas breves que una frase larga; así queda más tiempo para mirar.
+- **Sello de títulos (identidad, opción A):** todo texto de arriba lleva debajo una línea de puntos que nace de un
+  rombo central, con un punto guía que la recorre; baja si entra la 2ª línea y se recoge al salir. Es automático en
+  `componer()` (textos con y < 450 que no siguen a un objeto). Si un contador ocupa la 2ª línea, poner un texto
+  invisible (`brillo=0`) en esa línea para que el sello quede debajo.
+- **Pergamino con el nombre** en toda persona real que aparezca (`video/pergamino.py`).
 - Contenido enfocado en el tema: sin elementos que distraigan del mensaje (p. ej. se quitó la Tierra en las fases).
 
 ## Puntos
@@ -107,9 +115,11 @@ muy limpios (un objeto sobre fondo negro). El puntillismo se luce con **un objet
 - **Que el tiempo se vea** (ciclo del agua v9): cuando la historia dice "pasan años/días", mostrarlo con relojes de
   puntos, contadores y cámara rápida, no solo decirlo.
 
-## Regla del motor: la cámara nunca queda quieta mientras pasan los textos (Galileo v4)
+## Regla del motor: la cámara nunca queda quieta mientras pasan los textos (Galileo v4, Darwin)
 - Si una misma imagen se sostiene con uno o más textos, la cámara **se sigue acercando** al punto de interés (el rostro,
   el objeto clave), más rápido cuanto más textos haya. Usar `video/camara.py` (`acercar`, `aplicar`).
+- **Tomas de personajes (regla general):** siempre se acercan de a poco al rostro con `acercar_toma`: el zoom final
+  sale de lo que dura la toma (toma larga = se acerca más; toma corta = se acerca menos y queda ahí).
 - Las etiquetas de identidad (pergamino con el nombre) **quedan fijas** mientras la cámara se acerca: atribuyen el cierre.
 - Al acercarse, los puntos se separan: subir el brillo con el zoom (≈ z^0.9) y, si el cierre termina en un rostro,
   poner más puntos en la cabeza al hacer el Voronoi.

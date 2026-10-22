@@ -5,6 +5,7 @@ sigue acercando al punto de interés (el rostro, el objeto clave). Las etiquetas
 
     from camara import acercar, aplicar
     z, cx, cy = acercar(t, t0, t1, ancla=(585, 440), destino=(540, 760), z1=2.4)
+    z, cx, cy = acercar_toma(t, t0, t1, ancla, destino)       # el zoom sale de lo que dura la toma
     x, y = aplicar(x, y, z, cx, cy)
 """
 import numpy as np
@@ -22,6 +23,14 @@ def cam_ancla(k, z0, z1, ancla, s0, s1):
 def acercar(t, t0, t1, ancla, destino, z1, z0=1.0):
     """Acercamiento continuo de t0 a t1: el ancla (p. ej. el rostro) va hacia 'destino' en pantalla con zoom z1."""
     return cam_ancla(ss(t0, t1, t), z0, z1, ancla, ancla, destino)
+
+# regla: en tomas de personajes la cámara se acerca de a poco al rostro; más larga la toma, más se acerca
+ACERCA_POR_SEGUNDO = 0.13
+ACERCA_MAX = 2.4
+def acercar_toma(t, t0, t1, ancla, destino):
+    """Acercamiento de toma de personaje: el zoom final depende de lo que dura la toma (t0 -> t1)."""
+    z1 = min(1 + ACERCA_POR_SEGUNDO*(t1 - t0), ACERCA_MAX)
+    return acercar(t, t0, t1, ancla, destino, z1)
 
 def aplicar(x, y, z, cx, cy):
     return (x - cx)*z + CX, (y - cy)*z + CY

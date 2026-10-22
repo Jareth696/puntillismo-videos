@@ -7,13 +7,13 @@ Uso como módulo:
     from textos import Texto, componer
     componer("entrada.mp4", "salida.mp4", [Texto("FASES DE LA LUNA", 0.6, 4.6, y=230, tam=44), ...])
 """
-import subprocess, numpy as np
+import os, subprocess, numpy as np
 from dataclasses import dataclass
 from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage
 
 W, H, FPS = 1080, 1920, 24
-FUENTE = "/usr/share/fonts/opentype/inter/Inter-ExtraLight.otf"
+FUENTE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "letras", "Inter-ExtraLight.otf")
 ss = lambda a, b, x: (lambda t: t*t*(3-2*t))(np.clip((x-a)/(b-a), 0, 1))
 
 @dataclass
@@ -75,7 +75,41 @@ def splat(buf, x, y, w):
     for dx, dy, ww in ((0,0,(1-fx)*(1-fy)), (1,0,fx*(1-fy)), (0,1,(1-fx)*fy), (1,1,fx*fy)):
         buf += np.bincount((iy+dy)*W + ix+dx, weights=w*ww, minlength=W*H).reshape(H, W)
 
-def componer(entrada, salida, textos, crf=15):
+# ---------- sello de los títulos (identidad, opción A aprobada) ----------
+# Debajo de los títulos de arriba nace una línea de puntos desde un rombo central; un punto guía la recorre; si entra
+# una segunda línea, la regla baja deslizándose y se estira; al salir el texto se recoge hacia el rombo.
+SELLO_ZONA = 450            # textos con y menor a esto (y que no siguen a un objeto) son "títulos de arriba"
+SELLO_SEPARA = 50           # distancia de la regla bajo la última línea
+def _linea_h(capa, x0, x1, y, w, paso=4.0):
+    if x1 - x0 < 1: return
+    x = np.arange(x0, x1, paso); splat(capa, x, np.full(len(x), y), np.full(len(x), w))
+def _rombo(capa, cx, cy, r, w):
+    a = np.linspace(0, 2*np.pi, 40, endpoint=False); x, y = np.cos(a), np.sin(a); s = np.abs(x) + np.abs(y)
+    splat(capa, cx + r*x/s, cy + r*y/s, np.full(40, w)); splat(capa, np.array([cx]), np.array([cy]), np.array([1.6*w]))
+_PG = np.random.default_rng(0); _PA = _PG.uniform(0, 2*np.pi, 40); _PR = np.sqrt(_PG.uniform(0, 1, 40))
+def _punto(capa, cx, cy, r, w):
+    splat(capa, cx + r*_PR*np.cos(_PA), cy + r*_PR*np.sin(_PA), np.full(40, w*0.4))
+
+def sello_titulo(capa, t, titulos):
+    """titulos: lista de (Texto, ancho en px). Dibuja la regla bajo el bloque de títulos activo."""
+    act = []
+    for tx, ancho in titulos:
+        p = ss(tx.t0, tx.t0 + 0.5, t)*(1 - ss(tx.t1 - 0.1, tx.t1 + 0.6, t))
+        if p > 0.005: act.append((tx.y, p, ancho, tx))
+    if not act: return
+    act.sort(key=lambda a: a[0])
+    y = act[0][0] + SELLO_SEPARA; prev = act[0][0]
+    for yy, p, _, _ in act[1:]: y += (yy - prev)*p; prev = yy
+    m = max(an*min(1, p*1.5) for _, p, an, _ in act)/2*0.8
+    tx0 = min(act, key=lambda a: a[3].t0)[3]
+    e = ss(tx0.t0 + 0.2, tx0.t0 + 0.9, t)*max(p for _, p, _, _ in act)
+    if e < 0.01: return
+    m *= e; cx = W/2
+    _linea_h(capa, cx - m, cx - 20*e, y, 0.75*e); _linea_h(capa, cx + 20*e, cx + m, y, 0.75*e)
+    _rombo(capa, cx, y, 11*e, e); _punto(capa, cx - m - 10, y, 2.5, e); _punto(capa, cx + m + 10, y, 2.5, e)
+    _punto(capa, cx + m*0.92*np.sin(t*2.2), y, 4.5, 2.6*e)                      # punto guía
+
+def componer(entrada, salida, textos, crf=15, sello=True):
     rng = np.random.default_rng(7)
     datos = []
     for k, t in enumerate(textos):
@@ -85,8 +119,11 @@ def componer(entrada, salida, textos, crf=15):
     out = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "gray", "-s", f"{W}x{H}",
                             "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", str(crf), salida],
                            stdin=subprocess.PIPE)
+    titulos = [(tx, float(np.ptp(d["p"][:, 0]))) for tx, d in zip(textos, datos)
+               if sello and not tx.seguir and tx.y < SELLO_ZONA]
     for f, g in enumerate(leer(entrada)):
         t = f/FPS; capa = np.zeros((H, W))
+        sello_titulo(capa, t, titulos)
         for tx, d in zip(textos, datos):
             if not (tx.t0 - 0.1 < t < tx.t1 + 1.0): continue
             cx, cy = tx.x, tx.y

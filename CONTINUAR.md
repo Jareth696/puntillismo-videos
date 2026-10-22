@@ -1,40 +1,35 @@
-# Para continuar (estado al 21-oct-2026)
+# Para continuar (estado al 22-oct-2026)
 
-**Antes de crear un video nuevo, leer `GUIA_ESTILO.md` y usar `video/estilo.py`.**
+**Antes de crear un video nuevo:** leer `GUIA_ESTILO.md` (reglas) y `BIBLIOTECA.md` (escenas y efectos probados),
+y usar `video/estilo.py`.
 
-## Videos terminados (`videos/`)
-| Archivo | Qué es |
-|---|---|
-| `hoja_bn_v5.mp4` | Hoja 3D en puntillismo B/N (3 escenas, lluvia) |
-| `hoja_matrix_verde.mp4` | La hoja en estilo Matrix verde |
-| `tesla_bombilla_v1.mp4` | Rostro de Tesla → bombilla sin cables (B/N) |
-| `tesla_bombilla_matrix_v1.mp4` | Tesla en Matrix verde |
-| `luna_fases_textos.mp4` | Sobrevuelo lunar real (NASA) en puntos, con textos |
-| `luna_8_fases.mp4` | **Aprobado (v6):** las 8 fases de la Luna, entrada estilo Tesla. Referencia de estilo |
-| `ciclo_agua.mp4` | **Aprobado (v8):** el ciclo del agua, la gota protagonista. Referencia de protagonista que viaja |
-| `darwin_evolucion.mp4` | **Aprobado (v1, sin cambios):** Darwin → la marcha → ancestro común → árbol de la vida. Fuentes en `darwin/src/` (retrato 1881, dominio público; escultura aportada por el usuario) |
-| `galileo.mp4` | **Aprobado (v3):** geocéntrico → estatua con pergamino → telescopio que se aleja y de su boca sale Júpiter → zoom a sus 4 lunas → sistema solar → condena y remate (`galileo/galileo.py`) |
-| `hoja_viento.mp4` | **Aprobado:** la hoja en el viento, plano fijo con cambios de ángulo. Referencia de movimiento |
+## Videos terminados (`finales/`, aprobados y listos para publicar)
+| Archivo | Script | Qué es |
+|---|---|---|
+| `01_luna_8_fases.mp4` | `luna/fases8.py` | Las 8 fases de la Luna. Referencia de ritmo |
+| `02_ciclo_del_agua.mp4` | `agua/ciclo_agua7.py` | Una gota de millones de años: espiral del tiempo, reloj de arena, cambios de estado, aros 3D |
+| `03_darwin_evolucion.mp4` | `darwin/evolucion.py` | Retrato con pergamino → la marcha → ancestro común → árbol de la vida → retrato |
+| `04_galileo.mp4` | `galileo/galileo.py` | Geocéntrico → estatua → telescopio que muestra Júpiter → sistema solar → acercamiento al rostro |
 
-## Cómo regenerar
-- 8 fases: `cd luna && python3 fases8.py sin_textos.mp4` y luego
-  `python3 -c "import sys; sys.path.insert(0,'../video'); import fases8 as F; from textos import componer; componer('sin_textos.mp4','final.mp4',F.textos())"`
-- Requisitos: `pip install -r requirements.txt` + ffmpeg. Fuentes: Inter (textos), JetBrains Mono (Matrix).
+Todos llevan el sello de títulos (opción A) y, si aparece una persona, su pergamino con el nombre y el acercamiento.
+Regenerar: `python hacer_finales.py` (ver `README.md`).
 
-## Fuentes externas (no están en el repo, se descargan de nuevo si hacen falta)
-- Sobrevuelo Artemis II, luz lateral: https://images-assets.nasa.gov/video/lunarflyby_1min_2160p30/lunarflyby_1min_2160p30~large.mp4
-- Sobrevuelo Artemis II, luz frontal: https://images-assets.nasa.gov/video/a2_flyby_1min_2160p30/a2_flyby_1min_2160p30~large.mp4
-- Tomas reales Artemis I (Orion dejando la Luna): https://images.nasa.gov/details/Artemis_I_Post-RPF_Leaving_Moon_221205_1735009
-- Foto Luna llena (ya incluida en `luna/src/`): NASA/GSFC, GSFC_20171208_Archive_e001861
+Tesla (`tesla/`) quedó como prueba temprana (B/N y Matrix); no está entre los finales. La hoja se borró (sigue en el
+historial de git si alguna vez hace falta).
 
-## Próximos pasos posibles
-1. Probar el motor con temas nuevos (ver ideas en la conversación / GUIA_ESTILO.md).
-2. Otros temas de la NASA (planetas, Sol, ISS, eclipses): revisar primero con `python3 video/video_stipple.py VIDEO x.mp4 --analizar`.
+## Fuentes de imágenes
+- Luna llena: NASA/GSFC, GSFC_20171208_Archive_e001861 (`luna/src/`). Sol: NASA SDO (`galileo/src/`).
+- Retrato de Darwin 1881 y de Tesla ca. 1890: dominio público. Escultura de la marcha, estatua de Galileo y telescopio:
+  imágenes aportadas por el usuario (Pixabay).
+- Sobrevuelos lunares de la NASA (para `video/video_stipple.py`):
+  https://images-assets.nasa.gov/video/lunarflyby_1min_2160p30/lunarflyby_1min_2160p30~large.mp4
+- Desde la nube funcionan la NASA y Mixkit; Wikimedia, Pexels, Pixabay y Unsplash bloquean descargas automáticas
+  (desde la PC sí: se bajan y se ponen en la carpeta `src/` del video).
+
+## Ideas pendientes
+- Gancho alternativo para el agua: "EL AGUA QUE TOMAS / PUDO BEBERLA UN DINOSAURIO".
+- Opcionales: firma al final (usuario en puntos), portadas para cada Reel.
 
 ## Notas
-- Las fases están orientadas para el hemisferio norte (creciente iluminada a la derecha).
-- Desde la nube, Wikimedia limita descargas de video y Pexels/Pixabay bloquean descargas automáticas; la NASA funciona.
-
-## En curso
-- Ciclo del agua v9 (`agua/ciclo_agua7.py`, borrador): el tiempo se ve (túnel del tiempo, reloj de arena + contador de
-  años en el mar, cambios de estado marcados, reloj de días en la nube, círculo de ciclo al final).
+- Las fases de la Luna están orientadas para el hemisferio norte (creciente iluminada a la derecha).
+- Los videos pesan más de lo normal por los puntos finos; `hacer_finales.py` los comprime (CRF 20) para publicar.

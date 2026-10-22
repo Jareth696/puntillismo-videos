@@ -13,6 +13,8 @@ import estilo as E
 import stipple
 import elementos as EL
 from formacion import converger, textos_gancho
+from pergamino import pergamino
+from camara import acercar_toma, aplicar
 
 W, H, FPS = 1080, 1920, 24
 N = 30000
@@ -35,8 +37,14 @@ def linea(p0, p1, paso=3.0, b=0.85, curva=0.0):
     pts = np.r_[pts, pts + rng.normal(0, 1.6, pts.shape)]
     return np.c_[pts, np.full(len(pts), b)]
 
-# ---------- estado 0: retrato ----------
-S_RETRATO = a_n(EL.retrato(), seed=1)
+# ---------- estado 0: retrato con su nombre (pergamino) ----------
+PERG_Y = 1680; ROSTRO = (500.0, 770.0)
+def retrato_con_nombre():
+    R = EL.retrato(); R = R[R[:, 1] < PERG_Y - 70]
+    P = pergamino("CHARLES DARWIN", seed=3); P[:, 0] += 540; P[:, 1] += PERG_Y
+    S = np.r_[a_n(R, N - len(P), seed=1), P]
+    return np.c_[S, np.r_[np.zeros(N - len(P)), np.ones(len(P))]]       # 4ª columna: 1 = pergamino (queda fijo)
+S_RETRATO = retrato_con_nombre()
 
 # ---------- estado 1: la marcha ----------
 FIG = EL.figuras()
@@ -94,15 +102,23 @@ ESTADOS = [ordenar(S_RETRATO), ordenar(S_MARCHA), ordenar(S_CLADO, D_CLADO), ord
 # guion: (t inicio de la transición, duración) hacia el estado k
 TRANS = [(4.6, 2.2), (9.8, 3.2), (16.4, 3.0), (21.6, 2.2)]
 DUR = 27.4
+TOMAS = {0: (E.GANCHO_INICIO + 1.0, TRANS[0][0] + 0.6), 4: (TRANS[3][0] + 0.6, DUR - 0.4)}   # tomas del retrato (se acerca)
+def vista(k, S, t):
+    """Estado k en el instante t: en las tomas del retrato la cámara se acerca al rostro; el pergamino queda fijo."""
+    if k not in TOMAS: return S
+    z = acercar_toma(t, *TOMAS[k], ROSTRO, (540, 820)); S = S.copy(); m = S[:, 3] < 0.5
+    S[m, 0], S[m, 1] = aplicar(S[m, 0], S[m, 1], *z); S[m, 2] *= z[0]**0.9
+    S[m, 2] *= 1 - ss(PERG_Y - 120, PERG_Y - 60, S[m, 1])                 # pasa por detrás de la cinta
+    return S
 fase = rng.uniform(0, 6.28, N); dis = rng.normal(0, 1, (N, 2))*[90, 60]
 
 def posiciones(t):
-    P, _ = ESTADOS[0]
+    P = vista(0, ESTADOS[0][0], t)
     x, y, b = P[:, 0].copy(), P[:, 1].copy(), P[:, 2].copy()
     x, y, b = converger(x, y, b, t, seed=7)
     for k, (t0, d) in enumerate(TRANS):
         if t <= t0: break
-        Q, Dq = ESTADOS[k + 1]
+        Q, Dq = ESTADOS[k + 1]; Q = vista(k + 1, Q, t)
         e = ss(0, 1, (t - t0 - Dq*d*0.55)/(d*0.45))
         rem = np.sin(np.pi*e)[:, None]*dis                     # en el camino, los puntos se abren un poco
         x = x*(1 - e) + Q[:, 0]*e + rem[:, 0]; y = y*(1 - e) + Q[:, 1]*e + rem[:, 1]; b = b*(1 - e) + Q[:, 2]*e
