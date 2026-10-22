@@ -20,6 +20,22 @@ instante se nota que todo está hecho de puntos. Código: `video/formacion.py` (
 - Imágenes con estructura clara (siluetas, líneas principales) antes que texturas finas.
 - Pocos elementos por escena, grandes y bien iluminados.
 
+## Dos tipos de video
+1. **Transformación en el lugar** (`luna_8_fases.mp4`, Tesla): el elemento se queda quieto y lo que cambia es él
+   mismo (fases, forma). No necesita gestos propios.
+2. **Protagonista que viaja** (`ciclo_agua.mp4`, `hoja_viento.mp4`): el elemento recorre entornos y debe "actuar".
+   Usar `video/protagonista.py`:
+   - se **estira e inclina** hacia donde se mueve; **respira/se mece** cuando flota; **tiembla al llegar** y se asienta;
+   - **cámara un poco más cerca** toda la acción y **zoom puntual** en momentos clave (p. ej. al llegar a la montaña),
+     luego alejamiento para mostrar a dónde va;
+   - **impactos visibles**: salpicón al chocar, ondas al entrar al agua;
+   - movimiento con **física**: caídas que aceleran (gravedad), sin frenar en el aire; el zoom empieza DESPUÉS del impacto;
+   - **uno entre muchos**: todos con la misma forma, bien dibujados y grandes ("con zoom", pocos y nítidos);
+     el nuestro solo con **más brillo y un halo de puntos** (nunca un círculo que lo marque);
+   - entornos **solo de perfil** (contornos de puntos: nube con borde abajo y arriba, montaña), con un rótulo de contexto
+     pequeño ("NUBE", "MONTAÑA") en el espacio vacío;
+   - etapas un poco más largas (~4,6 s) para que el movimiento se aprecie.
+
 ## Ritmo: nada hace esperar al espectador
 - **Lo visual empieza en el primer segundo.** El objeto se forma desde un punto mientras aparece el gancho (título/pregunta).
 - **El objeto está completo a los ~3,8 s** y la acción principal arranca **antes de los 6,5 s**.
