@@ -54,7 +54,7 @@ def textos():
     from textos import Texto
     T = B.textos()
     T.append(Texto("NUBE", T_CO + 0.8, T_PR + 0.6, y=700, tam=E.TAM_ETIQUETA, brillo=0.7))
-    T.append(Texto("MONTAÑA", Z_IN1 - 0.3, Z_OUT0 + 0.4, y=470, tam=E.TAM_ETIQUETA, brillo=0.7))
+    T.append(Texto("MONTAÑA", Z_IN1 - 0.3, Z_OUT0 + 0.4, y=560, tam=E.TAM_ETIQUETA, brillo=0.7))
     return T
 
 def fb(f): return frame(f/FPS).tobytes()

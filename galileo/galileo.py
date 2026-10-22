@@ -172,14 +172,14 @@ def HELIO(t):
     Q[-len(L):] = L; return Q
 
 # estatua + pergamino con el nombre (tapa el recorte de los pies)
-PERG_Y = 1600
+PERG_Y = 1430                                        # sobre la zona que tapa Reels
 def estatua_con_nombre():
-    S = ESTATUA.copy(); S[:, 0] += CX; S[:, 1] += 1010
+    S = ESTATUA.copy(); S[:, 0] += CX; S[:, 1] += 1160         # más abajo: la cabeza no choca con los títulos
     S = S[S[:, 1] < PERG_Y - 30]                                        # los pies quedan detrás de la cinta
     P = pergamino("GALILEO GALILEI", seed=2); P[:, 0] += CX; P[:, 1] += PERG_Y
     return np.r_[S, P], len(P)                                         # el pergamino al final
 EST_P, N_PERG = estatua_con_nombre()
-ROSTRO = (585.0, 440.0)
+ROSTRO = (585.0, 590.0)
 def est(t0, t1, z1, destino):
     """Estatua mientras se leen los textos: la cámara se sigue acercando al rostro; el pergamino queda fijo."""
     def pos(t):
@@ -226,8 +226,8 @@ def telescopio_y_jupiter(t):
 def pista_jupiter():
     return [tuple(camara(J_W[None], *cam_tel(f/FPS))[0]) if T_SALE[1] - 0.6 < f/FPS < T_ZOOM[0] + 0.4 else None for f in range(int(DUR*FPS))]
 
-ESTADOS = [GEO, est(T_EST1 - 0.6, TRANS[1][0] + 0.6, 1.35, (560, 640)), telescopio_y_jupiter, telescopio_y_jupiter, HELIO,
-           est(T_EST2 - 0.4, DUR - 0.6, 2.3, (540, 700))]
+ESTADOS = [GEO, est(T_EST1 - 0.6, TRANS[1][0] + 0.6, 1.35, (560, 700)), telescopio_y_jupiter, telescopio_y_jupiter, HELIO,
+           est(T_EST2 - 0.4, DUR - 0.6, 2.3, (540, 760))]
 # emparejamiento por Hilbert (al momento en que cada estado se ve completo). El estado 3 es el mismo que el 2
 # (cambio instantáneo e invisible) solo para reordenar los puntos con Júpiter ya grande: así la salida al
 # heliocéntrico es ordenada.
@@ -275,21 +275,21 @@ def textos():
     L1, L2, TT = 230, 295, E.TAM_TITULO
     T += [Texto("DURANTE MÁS DE 1.400 AÑOS", 5.2, 9.3, y=L1, tam=TT),
           Texto("SE CREYÓ QUE SÍ", 5.8, 9.4, y=L2, tam=TT),
-          Texto("TIERRA", 6.0, 9.2, y=1080, tam=26, brillo=0.8),
+          Texto("TIERRA", 6.0, 9.2, y=1090, tam=36, brillo=0.8),
           Texto("HASTA QUE EN 1610", 11.0, 14.8, y=150, tam=TT),
           Texto("GALILEO HIZO ALGO SIMPLE", 11.6, 14.9, y=215, tam=TT),
           Texto("APUNTÓ UN TELESCOPIO", T_TEL - 0.4, T_SALE[0] + 0.4, y=L1, tam=TT),
           Texto("AL CIELO", T_TEL + 0.2, T_SALE[0] + 0.5, y=L2, tam=TT),
           Texto("Y VIO ALGO QUE", T_SALE[0] + 1.0, T_ZOOM[0] + 0.2, y=L1, tam=TT),
           Texto("NADIE HABÍA VISTO", T_SALE[0] + 1.6, T_ZOOM[0] + 0.3, y=L2, tam=TT),
-          Texto("JÚPITER", T_SALE[1] - 0.4, T_ZOOM[0] + 0.3, tam=26, seguir=True, dx=0, dy=-80, brillo=0.8, pista=pista_jupiter()),
+          Texto("JÚPITER", T_SALE[1] - 0.4, T_ZOOM[0] + 0.3, tam=36, seguir=True, dx=0, dy=-80, brillo=0.8, pista=pista_jupiter()),
           Texto("4 LUNAS GIRANDO", TRANS[2][0] + 0.2, 27.8, y=L1, tam=TT),
           Texto("ALREDEDOR DE JÚPITER", TRANS[2][0] + 0.8, 27.9, y=L2, tam=TT),
           Texto("ENTONCES NO TODO GIRA", 28.3, 31.5, y=L1, tam=TT),
           Texto("ALREDEDOR DE LA TIERRA", 28.9, 31.6, y=L2, tam=TT),
           Texto("LA TIERRA GIRA", T_HELIO - 0.4, 37.0, y=L1, tam=TT),
           Texto("ALREDEDOR DEL SOL", T_HELIO + 0.2, 37.1, y=L2, tam=TT),
-          Texto("TIERRA", T_HELIO, TRANS[4][0] - 0.2, tam=26, seguir=True, dx=0, dy=-62, brillo=0.8, pista=pista_tierra()),
+          Texto("TIERRA", T_HELIO, TRANS[4][0] - 0.2, tam=36, seguir=True, dx=0, dy=-62, brillo=0.8, pista=pista_tierra()),
           Texto("COPÉRNICO LO PROPUSO", 37.4, 40.9, y=L1, tam=TT),
           Texto("GALILEO DIO LAS PRUEBAS", 38.0, 41.0, y=L2, tam=TT),
           Texto("EN 1633 LO CONDENARON", T_EST2 - 0.4, 45.6, y=150, tam=TT),

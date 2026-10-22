@@ -11,7 +11,7 @@ y usar `video/estilo.py`.
 | `03_darwin_evolucion.mp4` | `darwin/evolucion.py` | Retrato con pergamino → la marcha → ancestro común → árbol de la vida → retrato |
 | `04_galileo.mp4` | `galileo/galileo.py` | Geocéntrico → estatua → telescopio que muestra Júpiter → sistema solar → acercamiento al rostro |
 
-Todos llevan el sello de títulos (opción A) y, si aparece una persona, su pergamino con el nombre y el acercamiento.
+Todos llevan letra grande legible en celular, respetan las zonas seguras de Reels, el sello de títulos (opción A) y, si aparece una persona, su pergamino con el nombre y el acercamiento.
 Regenerar: `python hacer_finales.py` (ver `README.md`).
 
 Tesla (`tesla/`) quedó como prueba temprana (B/N y Matrix); no está entre los finales. La hoja se borró (sigue en el
@@ -27,7 +27,8 @@ historial de git si alguna vez hace falta).
   (desde la PC sí: se bajan y se ponen en la carpeta `src/` del video).
 
 ## Ideas pendientes
-- Gancho alternativo para el agua: "EL AGUA QUE TOMAS / PUDO BEBERLA UN DINOSAURIO".
+- Agregar música suave y efectos de sonido (y, si se quiere, una narración): ajustar los tiempos de los textos a la voz.
+- Más imágenes desde la PC (Wikimedia, Pixabay, Unsplash...) donde sumen dinamismo.
 - Opcionales: firma al final (usuario en puntos), portadas para cada Reel.
 
 ## Notas

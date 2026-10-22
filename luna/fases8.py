@@ -15,6 +15,7 @@ from formacion import converger
 W, H, FPS, K = 1080, 1920, 24, 2
 GW, GH = W//K, H//K                                   # grilla de densidad
 CX, CY, R = 540, 900, 390                              # Luna en el video final (px)
+Y_ETIQUETA, Y_IND = 1385, 1468                         # sobre la zona que tapa Reels (y > 1500)
 ss = lambda a, b, x: (lambda t: t*t*(3-2*t))(np.clip((x-a)/(b-a), 0, 1))
 
 # ---------- textura (albedo) desde la foto ----------
@@ -73,12 +74,15 @@ def textos():
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "video"))
     from textos import Texto
     from formacion import textos_gancho
-    T = textos_gancho("¿SABÍAS QUE LA LUNA", "TIENE 8 FASES?")
+    T = textos_gancho("LA LUNA NUNCA", "CAMBIA DE FORMA")             # gancho: rompe una creencia
+    L = E.tiempo_lectura("SOLO CAMBIA LA PARTE", "QUE VEMOS ILUMINADA", extra=1)
+    T += [Texto("SOLO CAMBIA LA PARTE", T_APAGA + 0.1, T_APAGA + 0.1 + L, y=230, tam=E.TAM_TITULO),
+          Texto("QUE VEMOS ILUMINADA", T_APAGA + 0.6, T_APAGA + 0.2 + L, y=295, tam=E.TAM_TITULO)]
     for k, nombre in enumerate(FASES):
         t0 = T_CICLO + k*SEG - 0.1
-        T.append(Texto(nombre, t0, t0 + (QUIETO if k < 7 else QUIETO_ULT) + 0.6, y=1430, tam=34))
-    T += [Texto("UN CICLO COMPLETO", T_FIN_CICLO - E.REMATE_TEXTO_ANTES, DUR - 1.3, y=230, tam=36),
-          Texto("DURA 29,5 DÍAS", T_FIN_CICLO + 0.1, DUR - 1.2, y=290, tam=36)]
+        T.append(Texto(nombre, t0, t0 + (QUIETO if k < 7 else QUIETO_ULT) + 0.6, y=Y_ETIQUETA, tam=E.TAM_ETIQUETA))
+    T += [Texto("UN CICLO COMPLETO", T_FIN_CICLO - E.REMATE_TEXTO_ANTES, DUR - 1.3, y=230, tam=E.TAM_CIERRE),
+          Texto("DURA 29,5 DÍAS", T_FIN_CICLO + 0.1, DUR - 1.2, y=290, tam=E.TAM_CIERRE)]
     return T
 
 # ---------- render ----------
@@ -92,10 +96,10 @@ def indicador(buf, t):
         x = W/2 + (k - 3.5)*38; cerca = np.clip(1 - abs(pos - k - 0.18), 0, 1)**2
         x = W/2 + (k - 3.5)*44
         r = 2.5 + 9*cerca; a = np.linspace(0, 2*np.pi, 28, endpoint=False)
-        V.splat(buf, x + r*np.cos(a), 1530 + r*np.sin(a), np.full(28, e*(0.15 + 0.95*cerca)))   # anillo
+        V.splat(buf, x + r*np.cos(a), Y_IND + r*np.sin(a), np.full(28, e*(0.15 + 0.95*cerca)))   # anillo
         rd = 4.5*cerca; b = rng_i.uniform(0, 2*np.pi, 14); q = rd*np.sqrt(rng_i.uniform(0, 1, 14))
-        V.splat(buf, x + q*np.cos(b), 1530 + q*np.sin(b), np.full(14, e*1.2*cerca))            # relleno de la actual
-        V.splat(buf, np.array([x]), np.array([1530.0]), np.array([e*(0.45 + 1.8*cerca)]))
+        V.splat(buf, x + q*np.cos(b), Y_IND + q*np.sin(b), np.full(14, e*1.2*cerca))            # relleno de la actual
+        V.splat(buf, np.array([x]), np.array([float(Y_IND)]), np.array([e*(0.45 + 1.8*cerca)]))
 
 class A:                                                  # parámetros de densidad (como en video_stipple)
     invertir = False; aislar = 0; negro = 0.0; gamma = E.GAMMA; bordes = E.BORDES

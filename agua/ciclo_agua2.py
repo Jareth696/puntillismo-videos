@@ -17,6 +17,7 @@ from formacion import converger, textos_gancho, _origen
 W, H, FPS = 1080, 1920, 24
 ss = lambda a, b, x: (lambda t: t*t*(3-2*t))(np.clip((x-a)/(b-a), 0, 1))
 rng = np.random.default_rng(8)
+Y_ETIQUETA, Y_IND = 1385, 1468                         # sobre la zona que tapa Reels (y > 1500)
 PANT_Y = 960.0                                          # la cámara pone la gota a esta altura de pantalla
 
 # ---------- elementos (Voronoi una vez, en caché) ----------
@@ -144,8 +145,8 @@ def indicador(buf, t):
     for k in range(4):
         x = W/2 + (k - 1.5)*44; cerca = np.clip(1 - abs(pos - k - 0.18), 0, 1)**2
         r = 2.5 + 9*cerca; a = np.linspace(0, 2*np.pi, 28, endpoint=False)
-        splat(buf, x + r*np.cos(a), 1745 + r*np.sin(a), np.full(28, e*(0.15 + 0.95*cerca)))
-        splat(buf, np.array([x]), np.array([1745.0]), np.array([e*(0.45 + 1.8*cerca)]))
+        splat(buf, x + r*np.cos(a), Y_IND + r*np.sin(a), np.full(28, e*(0.15 + 0.95*cerca)))
+        splat(buf, np.array([x]), np.array([float(Y_IND)]), np.array([e*(0.45 + 1.8*cerca)]))
 
 def frame(t):
     sm = np.zeros((H, W)); bg = np.zeros((H, W)); amb = np.zeros((H, W))
@@ -198,10 +199,10 @@ def frame(t):
 
 def textos():
     from textos import Texto
-    T = textos_gancho("ESTA GOTA DE AGUA", "TIENE MILLONES DE AÑOS")
+    T = textos_gancho("EL AGUA QUE TOMAS", "PUDO BEBERLA UN DINOSAURIO")
     for k, nombre in enumerate(ETAPAS):
         t0 = INICIOS[k] - 0.1
-        T.append(Texto(nombre, t0, t0 + (E.ETAPA_QUIETA + 1.2 if k < 3 else 1.8), y=1660, tam=E.TAM_ETIQUETA))
+        T.append(Texto(nombre, t0, t0 + (E.ETAPA_QUIETA + 1.2 if k < 3 else 1.8), y=Y_ETIQUETA, tam=E.TAM_ETIQUETA))
     T += [Texto("Y SIGUE VIAJANDO", T_FIN - E.REMATE_TEXTO_ANTES, DUR - 1.3, y=230, tam=E.TAM_CIERRE),
           Texto("EL CICLO DEL AGUA", T_FIN + 0.1, DUR - 1.2, y=290, tam=E.TAM_CIERRE)]
     return T

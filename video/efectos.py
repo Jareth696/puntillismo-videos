@@ -75,7 +75,7 @@ def agujas(buf, cx, cy, R, vueltas, g, splat):
 
 def miles(n): return f"{n:,}".replace(",", ".")
 _cache_cont = {}
-def contador(buf, texto, y, e, splat, tam=42, x=W/2):
+def contador(buf, texto, y, e, splat, tam=60, x=W/2):
     """Texto que cambia en cada cuadro (años, días...) con el mismo estilo de puntos que los títulos."""
     if e < 0.01: return
     if texto not in _cache_cont:

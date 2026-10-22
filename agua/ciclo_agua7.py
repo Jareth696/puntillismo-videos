@@ -44,7 +44,7 @@ C5.mar = mar_rapido
 # ---------- efectos de la biblioteca (video/efectos.py) ----------
 import efectos as EF
 ESPIRAL = EF.EspiralTiempo(0.4, 3.9)              # viaje en el tiempo mientras se forma la gota y se lee el gancho
-RELOJ = EF.RelojArena(T_RA, vueltas=VUELTAS)       # 3 vueltas = 3.000 años
+RELOJ = EF.RelojArena(T_RA, centro=(W/2, 680.0), vueltas=VUELTAS)       # 3 vueltas = 3.000 años
 
 def extra(sm, t, P):
     _extra6(sm, t, P)
@@ -65,9 +65,9 @@ def extra(sm, t, P):
     _, c0, c1, d1 = T_RA                                               # contadores (en cámara rápida)
     if c0 - 0.4 < t < d1:
         anos = int(round(1000*RELOJ.progreso(t)/10)*10)
-        EF.contador(sm, f"{EF.miles(anos)} AÑOS", 295, ss(c0 - 0.4, c0, t)*(1 - ss(d1 - 0.5, d1, t)), raw)
+        EF.contador(sm, f"{EF.miles(anos)} AÑOS", E.TITULO_Y2, ss(c0 - 0.4, c0, t)*(1 - ss(d1 - 0.5, d1, t)), raw)
     if t0 < t < t1:
-        EF.contador(sm, f"DÍA {1 + int(ss(t0 + 0.3, t1 - 0.6, t)*8.999)}", 295, ss(t0, t0 + 0.4, t)*(1 - ss(t1 - 0.4, t1, t)), raw)
+        EF.contador(sm, f"DÍA {1 + int(ss(t0 + 0.3, t1 - 0.6, t)*8.999)}", E.TITULO_Y2, ss(t0, t0 + 0.4, t)*(1 - ss(t1 - 0.4, t1, t)), raw)
 _extra6 = C5.EXTRA
 C5.EXTRA = extra
 
