@@ -16,7 +16,8 @@ Z_MAX = 1.75
 ZOOM = [1.0, 540.0, 960.0, 540.0, 960.0]          # z, centro origen (x, y), centro destino (x, y)
 
 def zoom(t):
-    return 1 + (Z_MAX - 1)*ss(Z_IN0, Z_IN1, t)*(1 - ss(Z_OUT0, Z_OUT1, t))
+    base = 1 + 0.18*ss(5.0, 6.4, t)*(1 - ss(T_FIN - 0.6, T_FIN + 0.4, t))   # más cerca de nuestra gota todo el ciclo
+    return max(base, 1 + (Z_MAX - 1)*ss(Z_IN0, Z_IN1, t)*(1 - ss(Z_OUT0, Z_OUT1, t)))
 
 _splat = C5.splat
 def zsplat(buf, x, y, w):
@@ -40,6 +41,7 @@ def impactos(sm, t, P):
             a = np.linspace(0, 2*np.pi, 90, endpoint=False); r = 30 + 170*p
             zsplat(sm, 460 + r*np.cos(a), P(28 + 0.22*r*np.sin(a)), np.full(90, 0.75*(1 - p)**1.3))
 C5.EXTRA = impactos
+C5.LLEGADAS[:] = [T_TOCA, T_AGUA]
 
 def frame(t):
     z = zoom(t)

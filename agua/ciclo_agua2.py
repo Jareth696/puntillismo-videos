@@ -67,7 +67,7 @@ def mar(t):
 
 # ---------- guion ----------
 ETAPAS = ["EVAPORACIÓN", "CONDENSACIÓN", "PRECIPITACIÓN", "ESCORRENTÍA"]
-T0 = E.ACCION_INICIO; SEG = E.ETAPA
+T0 = E.ACCION_INICIO; SEG = 4.6                        # etapas más largas: movimientos con calma
 T_EV, T_CO, T_PR, T_ES = T0, T0 + SEG, T0 + 2*SEG, T0 + 3*SEG
 T_FIN = T_ES + 3.0                                      # +0.4 s: pausa flotando en el mar
 DUR = T_FIN + E.CIERRE

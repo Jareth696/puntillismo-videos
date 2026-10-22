@@ -29,8 +29,15 @@ GOTA_L = np.r_[CONT, REL, BRI]; NG = len(GOTA_L)
 ang_r = rng.uniform(0, 2*np.pi, NG); rad_r = np.clip(np.abs(rng.normal(0, 0.5, NG)), 0, 1.2)  # racimo de vapor
 HALO_A = rng.uniform(0, 2*np.pi, 160); HALO_R = 1.25 + rng.exponential(0.45, 160)
 
-def dibujar(sm, bg, cx, cy, R, rac, b, nuestra, t, P):
+def dibujar(sm, bg, cx, cy, R, rac, b, nuestra, t, P, vel=(0.0, 0.0), fase=0.0):
     x = GOTA_L[:, 0]*R; y = GOTA_L[:, 1]*R; w = GOTA_L[:, 2]*b
+    # movimiento sutil: se estira en la dirección en que se mueve y respira/tiembla un poco
+    sp = np.hypot(*vel); est = 1 + min(sp/1400, 0.32)
+    resp = 0.035*np.sin(t*2.6 + fase) + temblor(t, fase)
+    x = x*(1 + resp)/np.sqrt(est); y = y*(1 - resp)*est
+    if sp > 1:                                                # inclinación leve hacia donde va
+        ang = np.clip(np.arctan2(vel[0], vel[1]), -0.5, 0.5)*min(sp/600, 1)
+        c_, s_ = np.cos(ang), np.sin(ang); x, y = x*c_ + y*s_, -x*s_ + y*c_
     if rac > 0:                                               # vapor: los puntos se abren en un racimo que gira
         rr = R*1.5*rac; ang = ang_r + t*0.9*(1.3 - rad_r/1.2)
         x = x*(1 - rac) + rr*rad_r*np.cos(ang); y = y*(1 - rac) + rr*rad_r*np.sin(ang)
@@ -55,7 +62,15 @@ def visible_otra(t, i):
     return 1.0
 
 EXTRA = None
-R_GOTA = 72.0                                               # radio de las gotas "con zoom"
+R_GOTA = 72.0
+LLEGADAS = []                                            # momentos de impacto (los define ciclo_agua6)
+def temblor(t, fase):
+    """Al llegar (montaña, mar) la gota tiembla como gelatina y se asienta."""
+    v = 0.0
+    for t0 in LLEGADAS:
+        d = t - t0 - 0.05*fase
+        if 0 < d < 1.2: v += 0.12*np.exp(-d*3.2)*np.sin(d*22)
+    return v                                               # radio de las gotas "con zoom"
 
 # ---------- nube: contorno abajo y arriba (cúmulo) ----------
 def nube():
@@ -100,9 +115,11 @@ def frame(t):
         f = separacion(t)
         for i in range(NO):
             tt = float(np.clip(t - o_d[i], 5.0, T_FIN - 0.05)); ox, oy, _, orac = camino(tt)
-            dibujar(sm, bg, ox + o_dx[i]*f, oy + o_dy[i]*f + 4*np.sin(t*2 + i), R_GOTA, orac,
-                    0.42*vis_o*visible_otra(t, i), False, t, P)
-        dibujar(sm, bg, gx, gy, R_GOTA, rac, 1.15*k, True, t, P)
+            dibujar(sm, bg, ox + o_dx[i]*f, oy + o_dy[i]*f + 7*np.sin(t*1.7 + i*1.3), R_GOTA, orac,
+                    0.42*vis_o*visible_otra(t, i), False, t, P, (0.0, 0.0), i*1.7)
+        px, py, _, _ = camino(max(t - 0.06, 0)); vel = ((gx - px)/0.06, (gy - py)/0.06)
+        mece = 8*np.sin(t*1.9)*(1 - ss(T_EV + 0.3, T_EV + 1.0, t) + ss(T_FIN - 0.8, T_FIN, t))   # se mece en el mar
+        dibujar(sm, bg, gx, gy + mece, R_GOTA, rac, 1.15*k, True, t, P, vel)
     if EXTRA: EXTRA(sm, t, P)
     indicador(sm, t)
     img = (1.6*(sm + 2.2*blur(bg)) + 1.15*amb)*min(1, (DUR - t)/E.FUNDIDO_FINAL)
