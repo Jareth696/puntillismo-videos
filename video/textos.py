@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage
 
 W, H, FPS = 1080, 1920, 24
+ESPACIADO = 0.32          # espacio entre letras (proporción del tamaño)
 FUENTE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "letras", "Inter-ExtraLight.otf")
 ss = lambda a, b, x: (lambda t: t*t*(3-2*t))(np.clip((x-a)/(b-a), 0, 1))
 
@@ -35,7 +36,7 @@ def puntos_de_texto(t: Texto, densidad=0.55, seed=0):
     """Máscara del texto con espaciado amplio -> puntos (muestreo por la máscara, sin grumos)."""
     s = 3                                                          # supermuestreo para trazos finos
     f = ImageFont.truetype(FUENTE, t.tam*s)
-    track = int(t.tam*s*0.32)                                      # espaciado entre letras
+    track = int(t.tam*s*ESPACIADO)                                  # espaciado entre letras
     anchos = [f.getbbox(c)[2] - f.getbbox(c)[0] if c != " " else t.tam*s*0.35 for c in t.texto]
     total = int(sum(anchos) + track*(len(t.texto)-1)) + 8
     im = Image.new("L", (total, int(t.tam*s*1.5))); d = ImageDraw.Draw(im); x = 4
