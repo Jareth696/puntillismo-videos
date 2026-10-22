@@ -91,6 +91,18 @@ en `muestras/muestras.py` (función `e_...`) y sirve de ejemplo para copiar. Est
 | **Escáner de luz** | Una franja recorre el objeto y muestra lo de adentro | Capas de la Tierra, huesos, interiores | `e_escaner` |
 | **Pliegue de página** | La mitad de la imagen gira sobre un lomo como la hoja de un libro y revela otra | Del personaje a su idea, capítulos | `pagina` / `e_pagina` (Darwin → árbol) |
 
+### Segunda tanda (muestra en `muestras/muestras_movimientos_2.mp4`, código en `muestras/muestras2.py`)
+
+| Movimiento | Qué es | Sirve para | Código / ejemplo |
+|---|---|---|---|
+| **Túnel del tiempo con escrituras** | La cámara viaja hacia atrás por planos de épocas, sin fotos: binario, E=mc², F=ma, a²+b²=c², números mayas, cuneiforme, huellas de dinosaurio; el protagonista en el centro | "Pasaron millones de años", historia de una idea (ideal para el gancho del agua) | `e_tunel_tiempo`, glifos `maya`, `cuneiforme`, `huella` |
+| **Globo que gira** | Esfera de puntos con textura real (más puntos donde es clara) que gira e inclina | Planetas, la Luna, la Tierra | `esfera`, `globo` / `e_globo` |
+| **Lupa** | Un círculo recorre la imagen y agranda el detalle | Mostrar un detalle, "mirá de cerca" | `lupa` / `e_lupa` |
+| **Puntos que cuentan** | Grilla donde cada punto es una cantidad y se van encendiendo con un contador | Cifras enormes, comparaciones ("los humanos: menos de un punto") | `grilla_contadora` / `e_contar` |
+| **Desintegración** | Un frente avanza y los puntos se vuelan con el viento; puede volver a armarse | Extinción, olvido, erosión, el paso del tiempo | `desintegrar` / `e_desintegrar` |
+| **Línea que se dibuja** | Las estrellas aparecen y las líneas se trazan solas con una punta brillante | Constelaciones, rutas, mapas, firmas | `trazar` / `e_orion` |
+| **Onda expansiva** | Algo cae sobre una superficie de puntos en perspectiva y se abren anillos | Impactos, sonido, terremotos, gotas | `superficie_onda` / `e_onda` |
+
 ## Cómo proponer un video nuevo con la biblioteca
 
 1. Gancho: ¿qué cree la mayoría? (ver `GUIA_ESTILO.md`).
