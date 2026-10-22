@@ -3,3 +3,4 @@ __pycache__/
 *.png
 !tesla/src/*
 __pycache__/
+pruebas/
