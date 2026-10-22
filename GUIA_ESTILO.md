@@ -21,7 +21,7 @@ instante se nota que todo está hecho de puntos. Código: `video/formacion.py` (
 - Pocos elementos por escena, grandes y bien iluminados.
 
 ## Dos tipos de video
-1. **Transformación en el lugar** (`luna_8_fases.mp4`, Tesla): el elemento se queda quieto y lo que cambia es él
+1. **Transformación en el lugar** (`luna_8_fases.mp4`, Tesla, `darwin_evolucion.mp4`): el elemento se queda quieto y lo que cambia es él
    mismo (fases, forma). No necesita gestos propios.
 2. **Protagonista que viaja** (`ciclo_agua.mp4`, `hoja_viento.mp4`): el elemento recorre entornos y debe "actuar".
    Usar `video/protagonista.py`:
@@ -83,3 +83,9 @@ muy limpios (un objeto sobre fondo negro). El puntillismo se luce con **un objet
 - **NASA** (images.nasa.gov): dominio público.  **Mixkit** (mixkit.co): videos gratis, uso comercial sin crédito.
 - Bloqueadas o limitadas desde la nube: Wikimedia/Flickr (429), Pexels/Freepik/Rawpixel (403), Unsplash/Pixabay (piden cuenta).
   Desde el celular o la PC funcionan: se pueden subir a `fuentes/` del repo.
+
+## Lección de Darwin (aprobado al primer intento)
+- Un mismo conjunto de puntos que pasa por **estados** (retrato → figuras → diagrama → árbol → retrato), emparejados
+  por curva de Hilbert y con la llegada escalonada (`darwin/evolucion.py`). Es la plantilla para temas de "idea/historia".
+- Usar una imagen popular **para corregir un mito** es un gancho muy fuerte (la "marcha" → el árbol con ancestro común).
+- Los diagramas (ramas) crecen desde su origen: el orden de llegada sigue la estructura, no al azar.

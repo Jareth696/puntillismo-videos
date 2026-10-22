@@ -12,6 +12,7 @@
 | `luna_fases_textos.mp4` | Sobrevuelo lunar real (NASA) en puntos, con textos |
 | `luna_8_fases.mp4` | **Aprobado (v6):** las 8 fases de la Luna, entrada estilo Tesla. Referencia de estilo |
 | `ciclo_agua.mp4` | **Aprobado (v8):** el ciclo del agua, la gota protagonista. Referencia de protagonista que viaja |
+| `darwin_evolucion.mp4` | **Aprobado (v1, sin cambios):** Darwin → la marcha → ancestro común → árbol de la vida. Fuentes en `darwin/src/` (retrato 1881, dominio público; escultura aportada por el usuario) |
 | `hoja_viento.mp4` | **Aprobado:** la hoja en el viento, plano fijo con cambios de ángulo. Referencia de movimiento |
 
 ## Cómo regenerar
