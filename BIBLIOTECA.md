@@ -73,22 +73,23 @@ Cada ficha dice: **qué es**, **cuándo usarlo**, **dónde está el código** y 
 - **Puntillismo B/N (por defecto):** naturaleza, espacio, ciencia, historia, personajes.
 - **Matrix verde (0 y 1):** solo temas digitales (tecnología, IA, datos). Código: `tesla/matrix_tesla.py`.
 
-## 7. Ideas de movimiento por probar (todavía sin código)
+## 7. Movimientos de plano y cámara (muestra en `muestras/muestras_movimientos.mp4`)
 
-Juegan con el plano y la cámara, como la hoja (distintos ángulos de un mismo plano). Al probar una, pasarla arriba.
+Juegan con el plano y la cámara en 3D, como la hoja. Código: `video/movimientos.py`; cada escena de la muestra está
+en `muestras/muestras.py` (función `e_...`) y sirve de ejemplo para copiar. Estado: **muestra**, afinar al usarlos.
 
-| Idea | Qué es | Sirve para |
-|---|---|---|
-| **Tarjeta que gira** | El plano gira en 3D como una carta; al darse vuelta aparece la imagen siguiente | Pasar de mito a realidad, de antes a después |
-| **Mesa que se inclina** | La imagen se acuesta y queda como un piso o mapa visto en perspectiva | Mapas, líneas de tiempo, territorios |
-| **Tela que se hunde** | El plano de puntos se curva como una tela bajo un objeto pesado | Gravedad, espacio-tiempo, órbitas |
-| **Túnel de planos** | La cámara avanza a través de planos en profundidad, cada uno con una fecha o imagen | Historia, evolución, eras (como el inicio de The Big Bang Theory) |
-| **Zoom infinito** | Se entra en un punto y adentro hay otra escala (galaxia → estrella → planeta → célula → átomo) | Escalas, "potencias de diez" |
-| **Despiece** | El objeto se separa en sus partes con etiquetas y vuelve a armarse | Máquinas, anatomía, átomos |
-| **Paralaje por capas** | Capas a distinta profundidad se mueven a distinta velocidad al moverse la cámara | Paisajes, profundidad, viajes |
-| **Campo de flujo** | Los puntos siguen líneas de un campo (viento, corrientes, imanes) | Clima, océanos, magnetismo, electricidad |
-| **Escáner de luz** | Una franja de luz recorre el objeto y revela su interior | Lo que no se ve: huesos, capas de la Tierra |
-| **Pliegue de papel** | El plano se dobla por la mitad y muestra otra cara | Comparaciones, revelaciones |
+| Movimiento | Qué es | Sirve para | Código / ejemplo |
+|---|---|---|---|
+| **Tarjeta que gira** | El plano gira en 3D como una carta; al darse vuelta aparece la siguiente imagen | Mito → realidad, antes → después | `tarjeta`, `borde_rect` / `e_tarjeta` (la marcha → ancestro común) |
+| **Mesa que se inclina** | La imagen se acuesta y queda como un piso o mapa en perspectiva; la cámara la rodea | Mapas, líneas de tiempo | `inclinar` / `e_mesa` (árbol de la vida) |
+| **Tela que se hunde** | Malla de puntos en perspectiva que se curva bajo un objeto pesado; otro rueda en la curva | Gravedad, espacio-tiempo | `tela`, `ver_tela` / `e_tela` (Sol y Tierra) |
+| **Túnel de planos** | La cámara avanza entre planos en profundidad, cada uno con imagen y fecha | Historia, eras, evolución | `e_tunel` (1609 → 1610 → 1859 → hoy) |
+| **Zoom infinito** | Se entra en un punto y adentro hay otra escala | Escalas: galaxia → Sol → Tierra | `e_zoom` |
+| **Despiece** | El objeto se separa en sus partes con nombres y vuelve a armarse | Máquinas, anatomía, átomos | `e_despiece` (telescopio) |
+| **Paralaje por capas** | Capas a distinta profundidad que se mueven a distinta velocidad | Paisajes, profundidad, viajes | `cordillera` / `e_paralaje` |
+| **Campo de flujo** | Partículas que viajan por las líneas de un campo | Magnetismo, viento, corrientes | `lineas_dipolo`, `particulas_en_lineas` / `e_campo` |
+| **Escáner de luz** | Una franja recorre el objeto y muestra lo de adentro | Capas de la Tierra, huesos, interiores | `e_escaner` |
+| **Pliegue de página** | La mitad de la imagen gira sobre un lomo como la hoja de un libro y revela otra | Del personaje a su idea, capítulos | `pagina` / `e_pagina` (Darwin → árbol) |
 
 ## Cómo proponer un video nuevo con la biblioteca
 
