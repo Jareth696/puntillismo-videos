@@ -13,6 +13,7 @@
 | `luna_8_fases.mp4` | **Aprobado (v6):** las 8 fases de la Luna, entrada estilo Tesla. Referencia de estilo |
 | `ciclo_agua.mp4` | **Aprobado (v8):** el ciclo del agua, la gota protagonista. Referencia de protagonista que viaja |
 | `darwin_evolucion.mp4` | **Aprobado (v1, sin cambios):** Darwin → la marcha → ancestro común → árbol de la vida. Fuentes en `darwin/src/` (retrato 1881, dominio público; escultura aportada por el usuario) |
+| `galileo.mp4` | **Aprobado (v3):** geocéntrico → estatua con pergamino → telescopio que se aleja y de su boca sale Júpiter → zoom a sus 4 lunas → sistema solar → condena y remate (`galileo/galileo.py`) |
 | `hoja_viento.mp4` | **Aprobado:** la hoja en el viento, plano fijo con cambios de ángulo. Referencia de movimiento |
 
 ## Cómo regenerar
@@ -33,3 +34,7 @@
 ## Notas
 - Las fases están orientadas para el hemisferio norte (creciente iluminada a la derecha).
 - Desde la nube, Wikimedia limita descargas de video y Pexels/Pixabay bloquean descargas automáticas; la NASA funciona.
+
+## En curso
+- Ciclo del agua v9 (`agua/ciclo_agua7.py`, borrador): el tiempo se ve (túnel del tiempo, reloj de arena + contador de
+  años en el mar, cambios de estado marcados, reloj de días en la nube, círculo de ciclo al final).

@@ -95,3 +95,14 @@ muy limpios (un objeto sobre fondo negro). El puntillismo se luce con **un objet
   por curva de Hilbert y con la llegada escalonada (`darwin/evolucion.py`). Es la plantilla para temas de "idea/historia".
 - Usar una imagen popular **para corregir un mito** es un gancho muy fuerte (la "marcha" → el árbol con ancestro común).
 - Los diagramas (ramas) crecen desde su origen: el orden de llegada sigue la estructura, no al azar.
+
+## Lección de Galileo (aprobado en v3)
+- **Pergamino con el nombre** (`video/pergamino.py`): cinta con colas en V y el nombre en mayúsculas con serifa, a los
+  pies del personaje. Es el sello de identidad de los videos de personajes y tapa recortes feos (pies, bases).
+- **Más contexto sin aburrir:** contar la historia completa (lo que se creía → lo que vio → lo que dedujo → lo que
+  cambió), pero cada texto con algo moviéndose: planos que se inclinan, acercamientos lentos, órbitas.
+- **El objeto real muestra lo que se ve con él:** el telescopio se ve de cerca, la cámara se aleja, de su boca sale lo
+  que vio (Júpiter) y la cámara hace zoom hasta eso. Un mismo plano, distintas vistas.
+- **La duración la pone la historia:** dura lo que tenga que durar, con entradas, transiciones y salidas rápidas.
+- **Que el tiempo se vea** (ciclo del agua v9): cuando la historia dice "pasan años/días", mostrarlo con relojes de
+  puntos, contadores y cámara rápida, no solo decirlo.
