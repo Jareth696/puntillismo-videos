@@ -1,7 +1,9 @@
 """Galileo (puntillismo B/N, 1080x1920). Plantilla de estados (como Darwin) con estados ANIMADOS (órbitas).
 
-Geocéntrico (mito, gancho) -> estatua de Galileo -> Júpiter y sus 4 lunas -> heliocéntrico -> estatua.
-Fuentes: estatua (Uffizi, foto aportada por el usuario, recorte GrabCut), Sol (NASA SDO), Júpiter (NASA Cassini).
+Geocéntrico (mito, gancho; el plano se inclina) -> estatua con pergamino -> telescopio que se aleja y de su boca sale
+lo que vio -> zoom a Júpiter y sus 4 lunas -> heliocéntrico -> estatua (condena y remate).
+Fuentes: estatua (Uffizi, foto aportada por el usuario, recorte GrabCut), Sol (NASA SDO), Júpiter (dibujado),
+telescopio (Pixabay, aportado por el usuario).
 
     python3 galileo.py sin_textos.mp4 [n_cuadros|0] [con_textos.mp4]
 """
@@ -13,9 +15,10 @@ sys.path.insert(0, os.path.join(AQUI, "..", "video")); sys.path.insert(0, os.pat
 import estilo as E
 import stipple
 from formacion import converger, textos_gancho
+from pergamino import pergamino
 
 W, H, FPS = 1080, 1920, 24
-N = 30000; CX, CY = 540.0, 960.0
+N = 33000; CX, CY = 540.0, 960.0
 ss = lambda a, b, x: (lambda t: t*t*(3-2*t))(np.clip((x-a)/(b-a), 0, 1))
 rng = np.random.default_rng(9)
 
@@ -81,50 +84,134 @@ def anillo(n, R, achata=1.0, b=0.3):
     a = np.linspace(0, 2*np.pi, n, endpoint=False) + rng.uniform(0, 0.01, n)
     return np.c_[R*np.cos(a), R*achata*np.sin(a), np.full(n, b)]
 
+def telescopio(n=12000):
+    """Telescopio (foto con fondo transparente aportada por el usuario). Sin la caja de monedas. Alto normalizado a 1."""
+    im = np.asarray(Image.open(os.path.join(AQUI, "src", "telescopio.webp")).convert("RGBA"), float)/255
+    im = im[:1560]; g = im[..., :3].mean(2); a = im[..., 3]*np.clip((1560 - np.arange(1560))/140, 0, 1)[:, None]
+    G = np.asarray(Image.fromarray((g*255).astype(np.uint8)).resize((g.shape[1]//2, g.shape[0]//2), Image.LANCZOS), float)/255
+    A = np.asarray(Image.fromarray((a*255).astype(np.uint8)).resize((G.shape[1], G.shape[0]), Image.LANCZOS), float)/255
+    gy, gx = np.gradient(ndimage.gaussian_filter(G*A, 1)); edge = np.clip(np.hypot(gx, gy)*6, 0, 1)
+    d = A*(np.clip((G - 0.12)/0.8, 0, 1)**1.2 + 0.6*edge) + 1e-6*(A > 0.5)
+    p, _ = stipple.voronoi(d, n, 30, 4)
+    iy, ix = np.clip(p[:, 1].astype(int), 0, G.shape[0]-1), np.clip(p[:, 0].astype(int), 0, G.shape[1]-1)
+    b = G[iy, ix]*A[iy, ix]
+    return np.c_[(p[:, 0] - G.shape[1]/2)/G.shape[0], (p[:, 1] - G.shape[0]/2)/G.shape[0], np.clip(0.3 + 0.9*b, 0, 1)]
+TELESC = cache("telescopio", telescopio)
+TEL_LENTE = np.array([(1600 - 1847/2)/1560, (300 - 780)/1560])      # boca del telescopio (coordenadas locales)
+TEL_OCULAR = np.array([(300 - 1847/2)/1560, (990 - 780)/1560])
+
 # ---------- estados: listas de cuerpos (puntos locales, escala, órbita) ----------
 class Cuerpo:
-    def __init__(self, P, escala, R=0.0, periodo=1.0, fase=0.0, achata=1.0, centro=(CX, CY), oculto_por=None, brillo=1.0):
+    def __init__(self, P, escala, R=0.0, periodo=1.0, fase=0.0, achata=1.0, centro=(CX, CY), oculto_por=None, brillo=1.0, plano=False):
         self.P, self.esc, self.R, self.per, self.fase, self.ach = P, escala, R, periodo, fase, achata
-        self.centro, self.oculto_por, self.brillo = centro, oculto_por, brillo
-    def pos(self, t):
+        self.centro, self.oculto_por, self.brillo, self.plano = centro, oculto_por, brillo, plano
+    def pos(self, t, inc=1.0):
+        """inc: inclinación de la vista del plano orbital (1 = desde arriba, menos = más de costado)."""
         a = self.fase + 2*np.pi*t/self.per
-        cx = self.centro[0] + self.R*np.cos(a); cy = self.centro[1] + self.R*self.ach*np.sin(a)
-        x = cx + self.P[:, 0]*self.esc; y = cy + self.P[:, 1]*self.esc; b = self.P[:, 2]*self.brillo
+        cx = self.centro[0] + self.R*np.cos(a); cy = self.centro[1] + self.R*self.ach*inc*np.sin(a)
+        x = cx + self.P[:, 0]*self.esc; y = cy + self.P[:, 1]*self.esc*(inc if self.plano else 1); b = self.P[:, 2]*self.brillo
         if self.oculto_por is not None and np.sin(a) < 0 and abs(cx - self.centro[0]) < self.oculto_por:
             b = b*0.0                                                    # pasa detrás del planeta
         return np.c_[x, y, b], (cx, cy)
 
-def estado(cuerpos):
-    tam = sum(len(c.P) for c in cuerpos)
+def completar(Q):
+    if len(Q) >= N: return Q[:N]
+    return np.r_[Q, Q[rng.integers(0, len(Q), N - len(Q))]]
+
+def estado(cuerpos, inc=lambda t: 1.0, cam=None):
     def pos(t):
-        Q = np.concatenate([c.pos(t)[0] for c in cuerpos])
-        if len(Q) >= N: return Q[:N]
-        return np.r_[Q, Q[rng.integers(0, len(Q), N - len(Q))]]
-    return pos, tam
+        k = inc(t); Q = np.concatenate([c.pos(t, k)[0] for c in cuerpos])
+        if cam is not None: Q = camara(Q, *cam(t))
+        return completar(Q)
+    return pos
+
+def camara(Q, z, cx, cy):
+    Q = Q.copy(); Q[:, 0] = (Q[:, 0] - cx)*z + CX; Q[:, 1] = (Q[:, 1] - cy)*z + CY; return Q
+
+def cam_ancla(k, z0, z1, ancla, s0, s1):
+    """Cámara entre dos vistas: zoom logarítmico y un punto 'ancla' que viaja suave en pantalla (sin derivas)."""
+    z = z0*(z1/z0)**k; s = np.asarray(s0, float)*(1 - k) + np.asarray(s1, float)*k
+    c = np.asarray(ancla, float) - (s - [CX, CY])/z
+    return z, c[0], c[1]
+
+# guion
+T_GEO_GIRA = (5.2, 8.6)                     # el plano geocéntrico se inclina (otra vista del mismo plano)
+TRANS = [(9.4, 2.2), (15.0, 2.0), (24.6, 0.001), (31.4, 2.4), (40.8, 2.2)]
+DUR = 50.6
+T_EST1 = TRANS[0][0] + TRANS[0][1]; T_TEL = TRANS[1][0] + TRANS[1][1]; T_HELIO = TRANS[3][0] + TRANS[3][1]; T_EST2 = TRANS[4][0] + TRANS[4][1]
+T_ALEJA = (T_TEL + 0.8, T_TEL + 2.6)        # el telescopio se aleja: aparece el cielo
+T_SALE = (T_TEL + 2.0, T_TEL + 4.0)         # de la boca del telescopio sale lo que vio
+T_ZOOM = (T_TEL + 5.8, TRANS[2][0])         # zoom a Júpiter
 
 TIERRA_P = disco_liso(2600, 11, 0.3)
 GEO = estado([Cuerpo(TIERRA_P, 70),                                                       # la Tierra en el centro
-              Cuerpo(anillo(1600, 400, b=0.25), 1, ), Cuerpo(anillo(1100, 240, b=0.2), 1),
+              Cuerpo(anillo(1600, 400, b=0.25), 1, plano=True), Cuerpo(anillo(1100, 240, b=0.2), 1, plano=True),
               Cuerpo(SOL, 95, R=400, periodo=7.0, fase=-0.6),                            # el Sol gira alrededor
-              Cuerpo(disco_liso(900, 12), 22, R=240, periodo=4.2, fase=2.0)])           # un planeta
+              Cuerpo(disco_liso(900, 12), 22, R=240, periodo=4.2, fase=2.0)],           # un planeta
+             inc=lambda t: 1 - 0.55*ss(*T_GEO_GIRA, t))
 HELIO_T = Cuerpo(TIERRA_P, 34, R=330, periodo=8.0, fase=0.8, brillo=1.25)
+INC_HELIO = lambda t: 1 - 0.5*ss(T_HELIO + 1.6, T_HELIO + 6.0, t)
 HELIO = estado([Cuerpo(SOL, 150),
-                Cuerpo(anillo(900, 230, b=0.22), 1), Cuerpo(anillo(1300, 330, b=0.28), 1), Cuerpo(anillo(1500, 450, b=0.22), 1),
+                Cuerpo(anillo(900, 230, b=0.22), 1, plano=True), Cuerpo(anillo(1300, 330, b=0.28), 1, plano=True),
+                Cuerpo(anillo(1500, 450, b=0.22), 1, plano=True),
                 Cuerpo(disco_liso(700, 13), 16, R=230, periodo=4.6, fase=2.6),
                 HELIO_T,
-                Cuerpo(disco_liso(800, 14), 24, R=450, periodo=13.0, fase=4.2)])
-LUNAS = [Cuerpo(disco_liso(420, 20 + k), 13, R=R, periodo=p, fase=f, achata=0.12, oculto_por=210)
-         for k, (R, p, f) in enumerate(((270, 2.4, 0.3), (335, 4.8, 2.2), (410, 9.6, 4.0), (490, 16.0, 5.3)))]
-JUPITER = estado([Cuerpo(JUP, 210)] + LUNAS)
-EST = estado([Cuerpo(ESTATUA, 1.0, centro=(CX, 1010), brillo=1.45)])
+                Cuerpo(disco_liso(800, 14), 24, R=450, periodo=13.0, fase=4.2)], inc=INC_HELIO)
 
-# guion: (estado, t llega, duración transición)
-ESTADOS = [GEO[0], EST[0], JUPITER[0], HELIO[0], EST[0]]
-TRANS = [(5.0, 2.2), (10.4, 2.2), (16.4, 2.4), (23.0, 2.2)]
-DUR = 28.6
+# estatua + pergamino con el nombre (tapa el recorte de los pies)
+PERG_Y = 1600
+def estatua_con_nombre():
+    S = ESTATUA.copy(); S[:, 0] += CX; S[:, 1] += 1010
+    S = S[S[:, 1] < PERG_Y - 30]                                        # los pies quedan detrás de la cinta
+    P = pergamino("GALILEO GALILEI", seed=2); P[:, 0] += CX; P[:, 1] += PERG_Y
+    return np.r_[S, P]
+EST_P = estatua_con_nombre()
+def est(t0):
+    """Estatua con un acercamiento lento mientras se lee (que nunca quede quieta)."""
+    return estado([Cuerpo(EST_P, 1.0, centro=(0, 0), brillo=1.0)],
+                  cam=lambda t: (1 + 0.07*ss(t0, t0 + 6, t), CX, 900))
 
-# emparejamiento por Hilbert (al momento en que cada estado aparece)
-T_REF = [0.0] + [t0 + d for t0, d in TRANS]
+# telescopio -> lo que vio (Júpiter y sus lunas) -> zoom a Júpiter: un mismo plano, distintas vistas
+ANG = np.radians(30)
+def rotar(P, ang):
+    c, s = np.cos(ang), np.sin(ang); return np.c_[P[:, 0]*c + P[:, 1]*s, -P[:, 0]*s + P[:, 1]*c]
+TEL_ESC = 780
+J_W, J_R = np.array([660.0, 640.0]), 60.0                            # Júpiter en el mundo (vista amplia)
+_dir = rotar((TEL_LENTE - TEL_OCULAR)[None], ANG)[0]; _dir /= np.hypot(*_dir)
+TEL_C = J_W - _dir*500 - rotar(TEL_LENTE[None], ANG)[0]*TEL_ESC      # el telescopio apunta a Júpiter
+LENTE_W = TEL_C + rotar(TEL_LENTE[None], ANG)[0]*TEL_ESC
+TEL_W = np.c_[rotar(TELESC[:, :2], ANG)*TEL_ESC + TEL_C, TELESC[:, 2]*1.7]
+JUP_S = JUP[np.random.default_rng(5).choice(len(JUP), 17000, replace=False)]
+f = J_R/210
+GRUPO_J = [Cuerpo(JUP_S, J_R, centro=tuple(J_W))] + \
+          [Cuerpo(disco_liso(420, 20 + k), 13*f, R=R*f, periodo=p, fase=ph, achata=0.12, oculto_por=210*f, centro=tuple(J_W), brillo=1.2)
+           for k, (R, p, ph) in enumerate(((270, 2.4, 0.3), (335, 4.8, 2.2), (410, 9.6, 4.0), (490, 16.0, 5.3)))]
+_r = np.random.default_rng(6); N_J = sum(len(c.P) for c in GRUPO_J)
+SALE_D = _r.uniform(0, 1, N_J); SALE_CURVA = _r.normal(0, 1, N_J)*40
+Z_CERCA, Z_JUP = 1.7, 210/J_R
+def cam_tel(t):
+    if t < T_ZOOM[0]:
+        k = ss(*T_ALEJA, t); a = TEL_C + [40, -60]
+        return cam_ancla(k, Z_CERCA, 1.0, a, [CX, CY], (a - [CX, CY]) + [CX, CY])
+    k = ss(*T_ZOOM, t); return cam_ancla(k, 1.0, Z_JUP, J_W, J_W, [CX, CY])
+def telescopio_y_jupiter(t):
+    Jq = np.concatenate([c.pos(t)[0] for c in GRUPO_J])
+    e = ss(0, 1, (t - T_SALE[0] - SALE_D*(T_SALE[1] - T_SALE[0] - 0.7))/0.7)          # cada punto sale de la boca
+    d = Jq[:, :2] - LENTE_W; perp = np.c_[-d[:, 1], d[:, 0]]/np.maximum(np.hypot(*d.T), 1)[:, None]
+    Jq[:, :2] = LENTE_W + d*e[:, None] + perp*(np.sin(np.pi*e)*SALE_CURVA)[:, None]
+    Jq[:, 2] *= ss(0, 0.2, e)
+    z = cam_tel(t)
+    Jq[:len(JUP_S), 2] *= 0.3 + 0.7*np.clip((z[0] - 1)/(Z_JUP - 1), 0, 1)   # de lejos Júpiter no se satura
+    Q = np.r_[TEL_W, Jq]
+    return completar(camara(Q, *z))
+def pista_jupiter():
+    return [tuple(camara(J_W[None], *cam_tel(f/FPS))[0]) if T_SALE[1] - 0.6 < f/FPS < T_ZOOM[0] + 0.4 else None for f in range(int(DUR*FPS))]
+
+ESTADOS = [GEO, est(T_EST1), telescopio_y_jupiter, telescopio_y_jupiter, HELIO, est(T_EST2)]
+# emparejamiento por Hilbert (al momento en que cada estado se ve completo). El estado 3 es el mismo que el 2
+# (cambio instantáneo e invisible) solo para reordenar los puntos con Júpiter ya grande: así la salida al
+# heliocéntrico es ordenada.
+T_REF = [0.0] + [t0 + d for t0, d in TRANS]; T_REF[2] = T_SALE[1] + 0.5; T_REF[3] = TRANS[2][0] + 0.5
 ORDEN = [stipple.hilbert_order(ESTADOS[k](T_REF[k])[:, :2]) for k in range(len(ESTADOS))]
 DEM = rng.uniform(0, 1, N)**1.2; fase = rng.uniform(0, 6.28, N); dis = rng.normal(0, 1, (N, 2))*[80, 60]
 
@@ -153,28 +240,42 @@ def frame(t):
     sm = np.zeros((H, W)); bg = np.zeros((H, W))
     x, y, b = posiciones(t); w = b*(0.92 + 0.08*np.sin(t*4 + fase))*1.9
     splat(sm, x[~big], y[~big], w[~big]); splat(bg, x[big], y[big], w[big])
-    cielo = 1 - ss(5.0, 6.0, t) + ss(10.4, 11.4, t) - ss(23.0, 24.0, t)   # estrellas en las escenas del cielo
+    cielo = 1 - ss(TRANS[0][0], TRANS[0][0] + 1, t) + ss(*T_ALEJA, t) - ss(TRANS[4][0], TRANS[4][0] + 1, t)   # estrellas en el cielo
     splat(sm, st_x, st_y, st_b*(0.6 + 0.4*np.sin(t*1.5 + st_p))*3*np.clip(cielo, 0, 1)*ss(0, 2, t))
     img = (sm + 2.2*blur(bg))*min(1, (DUR - t)/E.FUNDIDO_FINAL)
     return (np.clip(img, 0, 1)*255).astype(np.uint8)
 
 def pista_tierra():
     """Posición en pantalla de la Tierra en el modelo heliocéntrico (para su etiqueta)."""
-    return [HELIO_T.pos(f/FPS)[1] if TRANS[2][0] + 1.5 < f/FPS < TRANS[3][0] else None for f in range(int(DUR*FPS))]
+    return [HELIO_T.pos(f/FPS, INC_HELIO(f/FPS))[1] if T_HELIO - 0.6 < f/FPS < TRANS[4][0] else None for f in range(int(DUR*FPS))]
 
 def textos():
     from textos import Texto
     T = textos_gancho("¿EL SOL GIRA", "ALREDEDOR DE LA TIERRA?")
-    T += [Texto("EN 1610 APUNTÓ", 6.0, 10.2, y=150, tam=E.TAM_TITULO),
-          Texto("UN TELESCOPIO AL CIELO", 6.6, 10.3, y=215, tam=E.TAM_TITULO),
-          Texto("GALILEO GALILEI", 6.4, 10.1, y=1790, tam=E.TAM_ETIQUETA, brillo=0.7),
-          Texto("Y VIO LUNAS", 11.6, 16.2, y=230, tam=E.TAM_TITULO),
-          Texto("GIRANDO ALREDEDOR DE JÚPITER", 12.2, 16.3, y=295, tam=E.TAM_TITULO),
-          Texto("LA TIERRA GIRA", 17.8, 22.8, y=230, tam=E.TAM_TITULO),
-          Texto("ALREDEDOR DEL SOL", 18.4, 22.9, y=295, tam=E.TAM_TITULO),
-          Texto("TIERRA", 18.2, 22.6, tam=26, seguir=True, dx=0, dy=-62, brillo=0.8, pista=pista_tierra()),
-          Texto("MIRÓ AL CIELO", 23.8, DUR - 1.3, y=150, tam=E.TAM_CIERRE),
-          Texto("Y NOS CAMBIÓ DE LUGAR", 24.4, DUR - 1.2, y=210, tam=E.TAM_CIERRE)]
+    L1, L2, TT = 230, 295, E.TAM_TITULO
+    T += [Texto("DURANTE MÁS DE 1.400 AÑOS", 5.2, 9.3, y=L1, tam=TT),
+          Texto("SE CREYÓ QUE SÍ", 5.8, 9.4, y=L2, tam=TT),
+          Texto("TIERRA", 6.0, 9.2, y=1080, tam=26, brillo=0.8),
+          Texto("HASTA QUE EN 1610", 11.0, 14.8, y=150, tam=TT),
+          Texto("GALILEO HIZO ALGO SIMPLE", 11.6, 14.9, y=215, tam=TT),
+          Texto("APUNTÓ UN TELESCOPIO", T_TEL - 0.4, T_SALE[0] + 0.4, y=L1, tam=TT),
+          Texto("AL CIELO", T_TEL + 0.2, T_SALE[0] + 0.5, y=L2, tam=TT),
+          Texto("Y VIO ALGO QUE", T_SALE[0] + 1.0, T_ZOOM[0] + 0.2, y=L1, tam=TT),
+          Texto("NADIE HABÍA VISTO", T_SALE[0] + 1.6, T_ZOOM[0] + 0.3, y=L2, tam=TT),
+          Texto("JÚPITER", T_SALE[1] - 0.4, T_ZOOM[0] + 0.3, tam=26, seguir=True, dx=0, dy=-80, brillo=0.8, pista=pista_jupiter()),
+          Texto("4 LUNAS GIRANDO", TRANS[2][0] + 0.2, 27.8, y=L1, tam=TT),
+          Texto("ALREDEDOR DE JÚPITER", TRANS[2][0] + 0.8, 27.9, y=L2, tam=TT),
+          Texto("ENTONCES NO TODO GIRA", 28.3, 31.5, y=L1, tam=TT),
+          Texto("ALREDEDOR DE LA TIERRA", 28.9, 31.6, y=L2, tam=TT),
+          Texto("LA TIERRA GIRA", T_HELIO - 0.4, 37.0, y=L1, tam=TT),
+          Texto("ALREDEDOR DEL SOL", T_HELIO + 0.2, 37.1, y=L2, tam=TT),
+          Texto("TIERRA", T_HELIO, TRANS[4][0] - 0.2, tam=26, seguir=True, dx=0, dy=-62, brillo=0.8, pista=pista_tierra()),
+          Texto("COPÉRNICO LO PROPUSO", 37.4, 40.9, y=L1, tam=TT),
+          Texto("GALILEO DIO LAS PRUEBAS", 38.0, 41.0, y=L2, tam=TT),
+          Texto("EN 1633 LO CONDENARON", T_EST2 - 0.4, 45.6, y=150, tam=TT),
+          Texto("POR DEFENDERLO", T_EST2 + 0.2, 45.7, y=215, tam=TT),
+          Texto("MIRÓ AL CIELO", 46.1, DUR - 1.3, y=150, tam=E.TAM_CIERRE),
+          Texto("Y NOS CAMBIÓ DE LUGAR", 46.7, DUR - 1.2, y=210, tam=E.TAM_CIERRE)]
     return T
 
 def fb(f): return frame(f/FPS).tobytes()
