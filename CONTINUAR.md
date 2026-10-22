@@ -7,7 +7,7 @@ y usar `video/estilo.py`.
 | Archivo | Script | Qué es |
 |---|---|---|
 | `01_luna_8_fases.mp4` | `luna/fases8.py` | Las 8 fases de la Luna. Referencia de ritmo |
-| `02_ciclo_del_agua.mp4` | `agua/ciclo_agua7.py` | Una gota de millones de años: espiral del tiempo, reloj de arena, cambios de estado, aros 3D |
+| `02_ciclo_del_agua.mp4` | `agua/ciclo_agua8.py` | "El agua que tomas pudo beberla un dinosaurio": túnel del tiempo con escrituras, reloj de arena, cambios de estado, aros 3D |
 | `03_darwin_evolucion.mp4` | `darwin/evolucion.py` | Retrato con pergamino → la marcha → ancestro común → árbol de la vida → retrato |
 | `04_galileo.mp4` | `galileo/galileo.py` | Geocéntrico → estatua → telescopio que muestra Júpiter → sistema solar → acercamiento al rostro |
 

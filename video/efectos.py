@@ -168,3 +168,67 @@ def aro_3d(buf, cx, cy, R, inclina, giro, cabeza, g, splat, oculta=(205, 265, 25
         k = np.linspace(0, 1, 22); tam = 30*f[i]
         for lado in (-1, 1):
             splat(buf, x[i] - (tx*tam - lado*ty*tam*0.7)*k, y[i] - (ty*tam + lado*tx*tam*0.7)*k, np.full(22, 1.1*g*f[i]**2))
+
+# ---------- túnel del tiempo con escrituras (muestra: muestras/muestras2.py) ----------
+def _linea(p0, p1, paso=2.5):
+    p0, p1 = np.asarray(p0, float), np.asarray(p1, float); n = max(int(np.hypot(*(p1 - p0))/paso), 2)
+    return p0 + np.outer(np.linspace(0, 1, n), p1 - p0)
+def glifo_maya(v):
+    """Número maya: rayas (5) y puntos (1)."""
+    P = []
+    for b in range(v//5):
+        y = 18 - b*16
+        for yy in (y - 4, y + 4): P.append(_linea((-30, yy), (30, yy)))
+    for d in range(v % 5):
+        a = np.linspace(0, 6.28, 24); x0 = (d - (v % 5 - 1)/2)*16; y0 = 18 - (v//5)*16 - 4
+        P.append(np.c_[x0 + 5*np.cos(a), y0 + 5*np.sin(a)])
+    return np.concatenate(P)
+def glifo_cuneiforme(seed):
+    """Un signo cuneiforme: 2 a 4 cuñas (cabeza triangular + cola)."""
+    r = np.random.default_rng(seed); P = []
+    for _ in range(r.integers(2, 5)):
+        a = r.choice([0, np.pi/2, np.pi/4]); L = r.uniform(25, 45); h = r.uniform(-18, 18, 2)
+        d = np.array([np.cos(a), np.sin(a)]); n = np.array([-d[1], d[0]])
+        P += [_linea(h - n*7, h + n*7), _linea(h - n*7, h + d*12), _linea(h + n*7, h + d*12), _linea(h + d*12, h + d*L)]
+    return np.concatenate(P)
+def glifo_huella():
+    """Huella de dinosaurio de tres dedos."""
+    P = [_linea((0, 10), (0, -40)), _linea((0, 10), (-24, -32)), _linea((0, 10), (24, -32))]
+    a = np.linspace(0, 6.28, 30); P.append(np.c_[12*np.cos(a), 18 + 10*np.sin(a)]); return np.concatenate(P)
+
+def eras_escritura():
+    """Épocas hacia atrás en el tiempo, cada una con sus escrituras (sin imágenes)."""
+    s = lambda lista: [simbolo(x, tam=48, seed=k) for k, x in enumerate(lista)]
+    return [("HOY", s(["0101", "1010", "∞", "0110", "10", "π", "0011", "1"])),
+            ("1905", s(["E=mc²", "c", "λ", "ħ", "E=mc²", "Δt", "v", "c²"])),
+            ("1687", s(["F=ma", "G", "m₁m₂", "r²", "F=ma", "g", "∫", "dx"])),
+            ("300 a. C.", s(["a²+b²=c²", "π", "α", "β", "γ", "Δ", "Ω", "θ"])),
+            ("500 a. C.", [glifo_maya(v) for v in (1, 4, 7, 9, 12, 13, 17, 19)]),
+            ("3000 a. C.", [glifo_cuneiforme(k) for k in range(8)]),
+            ("HACE 66 MILLONES DE AÑOS", [glifo_huella() for _ in range(8)]),
+            ("HACE 4.000 MILLONES DE AÑOS", [])]
+
+class TunelTiempo:
+    """La cámara viaja hacia atrás por planos de épocas (anillos de escrituras + año) con el protagonista en el
+    centro. Úsese para "pasaron miles/millones de años"."""
+    def __init__(self, t0, t1, eras=None, centro=(W/2, 960.0), radio=420, sep=1150.0):
+        from textos import Texto, puntos_de_texto
+        self.t0, self.t1, self.c, self.R, self.sep = t0, t1, centro, radio, sep
+        self.eras = eras or eras_escritura()
+        self.anios = [puntos_de_texto(Texto(a, 0, 1, tam=70), seed=k) for k, (a, _) in enumerate(self.eras)]
+    def dibujar(self, buf, t, splat, D=1500.0, oculta=None):
+        """oculta: (semiancho, semialto) del protagonista: lo que pasa por encima de él se atenúa."""
+        if not self.t0 - 0.1 < t < self.t1 + 0.6: return
+        g = ss(self.t0, self.t0 + 0.5, t)*(1 - ss(self.t1, self.t1 + 0.6, t))
+        u = (t - self.t0)/(self.t1 - self.t0); cz = -700 + self.sep*len(self.eras)*0.95*ss(0.04, 0.95, u)**1.15
+        cx, cy = self.c
+        for k, (_, glifos) in enumerate(self.eras):
+            Zr = k*self.sep - cz
+            if Zr < -1300 or Zr > 2700: continue
+            f = D/max(D + Zr, 60); a = g*ss(2700, 1700, Zr)*(1 - ss(-700, -1300, Zr))
+            for j, G in enumerate(glifos):
+                ang = j*2*np.pi/len(glifos) + k*0.4 + t*0.25*(-1)**k
+                x = (G[:, 0] + self.R*np.cos(ang))*f + cx; y = (G[:, 1] + self.R*np.sin(ang)*1.15)*f + cy; w = np.full(len(G), 0.9*a)
+                if oculta is not None: w = w*np.where(((x - cx)/oculta[0])**2 + ((y - cy)/oculta[1])**2 < 1, 0.15, 1.0)
+                splat(buf, x, y, w)
+            T = self.anios[k]; splat(buf, T[:, 0]*f + cx, (T[:, 1] + 640)*f + cy, np.full(len(T), 1.2*a))

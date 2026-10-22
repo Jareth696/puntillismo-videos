@@ -95,7 +95,7 @@ en `muestras/muestras.py` (función `e_...`) y sirve de ejemplo para copiar. Est
 
 | Movimiento | Qué es | Sirve para | Código / ejemplo |
 |---|---|---|---|
-| **Túnel del tiempo con escrituras** | La cámara viaja hacia atrás por planos de épocas, sin fotos: binario, E=mc², F=ma, a²+b²=c², números mayas, cuneiforme, huellas de dinosaurio; el protagonista en el centro | "Pasaron millones de años", historia de una idea (ideal para el gancho del agua) | `e_tunel_tiempo`, glifos `maya`, `cuneiforme`, `huella` |
+| **Túnel del tiempo con escrituras** | La cámara viaja hacia atrás por planos de épocas, sin fotos: binario, E=mc², F=ma, a²+b²=c², números mayas, cuneiforme, huellas de dinosaurio; el protagonista en el centro | "Pasaron millones de años", historia de una idea (ideal para el gancho del agua) | `efectos.TunelTiempo` (con `oculta` para no tapar al protagonista) / usado en el agua (`agua/ciclo_agua8.py`) |
 | **Globo que gira** | Esfera de puntos con textura real (más puntos donde es clara) que gira e inclina | Planetas, la Luna, la Tierra | `esfera`, `globo` / `e_globo` |
 | **Lupa** | Un círculo recorre la imagen y agranda el detalle | Mostrar un detalle, "mirá de cerca" | `lupa` / `e_lupa` |
 | **Puntos que cuentan** | Grilla donde cada punto es una cantidad y se van encendiendo con un contador | Cifras enormes, comparaciones ("los humanos: menos de un punto") | `grilla_contadora` / `e_contar` |

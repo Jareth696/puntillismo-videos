@@ -46,7 +46,7 @@ python galileo.py prueba.mp4 48 prueba_con_textos.mp4
 | `video/` | **El motor**: estilo y tiempos (`estilo.py`), entrada (`formacion.py`), textos y sello de títulos (`textos.py`), pergamino (`pergamino.py`), cámara (`camara.py`), efectos (`efectos.py`), protagonista que viaja (`protagonista.py`), puntillismo desde video real (`video_stipple.py`), letras (`letras/`) |
 | `tesla/` | `stipple.py` (Voronoi + orden de Hilbert, lo usan todos) y el video de Tesla (B/N y Matrix) |
 | `luna/` | Las 8 fases de la Luna |
-| `agua/` | El ciclo del agua (`ciclo_agua7.py` es el final; usa 2 → 3 → 4 → 5 → 6 por debajo) |
+| `agua/` | El ciclo del agua (`ciclo_agua8.py` es el final; usa 7 → 6 → 5 → 4 → 3 → 2 por debajo) |
 | `darwin/` | Darwin y la evolución |
 | `galileo/` | Galileo |
 | `finales/` | Videos listos para publicar |

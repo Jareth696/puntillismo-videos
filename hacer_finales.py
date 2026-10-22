@@ -12,7 +12,7 @@ RAIZ = os.path.dirname(os.path.abspath(__file__))
 TRABAJO = os.path.join(RAIZ, "trabajo"); FINALES = os.path.join(RAIZ, "finales")
 VIDEOS = {                      # nombre: (carpeta, script, archivo final)
     "luna":    ("luna",    "fases8.py",      "01_luna_8_fases.mp4"),
-    "agua":    ("agua",    "ciclo_agua7.py", "02_ciclo_del_agua.mp4"),
+    "agua":    ("agua",    "ciclo_agua8.py", "02_ciclo_del_agua.mp4"),
     "darwin":  ("darwin",  "evolucion.py",   "03_darwin_evolucion.mp4"),
     "galileo": ("galileo", "galileo.py",     "04_galileo.mp4"),
 }
