@@ -103,6 +103,15 @@ en `muestras/muestras.py` (función `e_...`) y sirve de ejemplo para copiar. Est
 | **Línea que se dibuja** | Las estrellas aparecen y las líneas se trazan solas con una punta brillante | Constelaciones, rutas, mapas, firmas | `trazar` / `e_orion` |
 | **Onda expansiva** | Algo cae sobre una superficie de puntos en perspectiva y se abren anillos | Impactos, sonido, terremotos, gotas | `superficie_onda` / `e_onda` |
 
+### Tercera tanda: movimientos complejos (muestra en `muestras/muestras_movimientos_3.mp4`, código en `muestras/muestras3.py`)
+
+| Movimiento | Qué es | Sirve para | Código / ejemplo |
+|---|---|---|---|
+| **Cambio de escala** | Un objeto se transforma en otro de escala muy distinta (gota → océano de la Tierra vista desde el espacio) mientras la cámara se aleja | Conectar lo pequeño con lo enorme | `emparejar`, `morph` / `e_escala` |
+| **Cámara que entra** | Zoom continuo que atraviesa capas: las que ya pasamos se van y el nombre de la capa actual cambia abajo | Viaje al interior (Tierra, célula, átomo, cuerpo) | `e_entra`, `etiqueta_entra` |
+| **Puntos que se ordenan** | Los puntos de una imagen se reorganizan en un gráfico de barras con sus etiquetas | Cifras y datos (población, temperaturas, años) | `barras`, `morph` / `e_ordenar` |
+| **Reflejo en el agua** | El objeto y su reflejo ondulando debajo de la línea del horizonte, con olas de puntos | Paisajes nocturnos, calma, Luna, atardeceres | `e_reflejo` |
+
 ## Cómo proponer un video nuevo con la biblioteca
 
 1. Gancho: ¿qué cree la mayoría? (ver `GUIA_ESTILO.md`).

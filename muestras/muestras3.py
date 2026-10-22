@@ -18,7 +18,7 @@ def morph(A, B, k, abre=60.0):
     return np.c_[A[:, 0]*(1 - e) + B[:, 0]*e + dis[:, 0], A[:, 1]*(1 - e) + B[:, 1]*e + dis[:, 1], A[:, 2]*(1 - e) + B[:, 2]*e]
 
 # 1 ---------- cambio de escala: una gota se vuelve el océano de la Tierra vista desde el espacio ----------
-G = M2.GOTA.copy(); G[:, :2] *= 2.6; G[:, 0] += 540; G[:, 1] += 960
+G = M2.GOTA.copy(); G[:, 2] *= 1.6; G[:, :2] *= 2.6; G[:, 0] += 540; G[:, 1] += 960
 G = np.r_[G, np.c_[rng.normal(540, 90, 4000), rng.normal(1000, 110, 4000), np.full(4000, 0.3)]]
 G = G[((G[:, 0] - 540)/240)**2 + ((G[:, 1] - 980)/290)**2 < 1.4]
 def tierra_oceanos(n=60000):
@@ -59,8 +59,8 @@ VAL = [1.0, 2.5, 3.0, 6.0, 8.0]; NOMB = ["1800", "1900", "1960", "2000", "HOY"] 
 def barras(n):
     pesos = np.array(VAL)/sum(VAL); cuenta = (pesos*n).astype(int); cuenta[-1] += n - cuenta.sum(); P = []
     for k, c in enumerate(cuenta):
-        x0 = 170 + k*185; i = np.arange(c); cols = 14
-        P.append(np.c_[x0 + (i % cols)*9 - 60, 1300 - (i//cols)*9, np.full(c, 0.9)])
+        x0 = 170 + k*185; i = np.arange(c); cols = 20; dy = 760/(cuenta.max()/cols)
+        P.append(np.c_[x0 + (i % cols)*7 - 66, 1300 - (i//cols)*dy, np.full(c, 0.9)])
     return np.concatenate(P)
 BAR = barras(len(RET)); RO = RET[np.argsort(RET[:, 0])]                    # de izquierda a derecha: cada franja a su barra
 def e_ordenar(u):
