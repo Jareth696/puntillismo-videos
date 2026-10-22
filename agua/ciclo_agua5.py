@@ -54,6 +54,7 @@ def visible_otra(t, i):
     if t > T_PR + 1.0 and i >= 2: return 1 - ss(T_PR + 1.0, T_PR + 2.0, t)   # al bajar, solo dos acompañan
     return 1.0
 
+EXTRA = None
 R_GOTA = 72.0                                               # radio de las gotas "con zoom"
 
 # ---------- nube: contorno abajo y arriba (cúmulo) ----------
@@ -102,6 +103,7 @@ def frame(t):
             dibujar(sm, bg, ox + o_dx[i]*f, oy + o_dy[i]*f + 4*np.sin(t*2 + i), R_GOTA, orac,
                     0.42*vis_o*visible_otra(t, i), False, t, P)
         dibujar(sm, bg, gx, gy, R_GOTA, rac, 1.15*k, True, t, P)
+    if EXTRA: EXTRA(sm, t, P)
     indicador(sm, t)
     img = (1.6*(sm + 2.2*blur(bg)) + 1.15*amb)*min(1, (DUR - t)/E.FUNDIDO_FINAL)
     return (np.clip(img, 0, 1)*255).astype(np.uint8)

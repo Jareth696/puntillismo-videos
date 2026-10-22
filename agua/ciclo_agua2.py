@@ -69,11 +69,11 @@ def mar(t):
 ETAPAS = ["EVAPORACIÓN", "CONDENSACIÓN", "PRECIPITACIÓN", "ESCORRENTÍA"]
 T0 = E.ACCION_INICIO; SEG = E.ETAPA
 T_EV, T_CO, T_PR, T_ES = T0, T0 + SEG, T0 + 2*SEG, T0 + 3*SEG
-T_FIN = T_ES + 2.6
+T_FIN = T_ES + 3.0                                      # +0.4 s: pausa flotando en el mar
 DUR = T_FIN + E.CIERRE
 X_MAR = 400.0
 ATERRIZA = (790.0, -560.0)                              # punto de la ladera donde cae la gota
-LADERA = np.array([(790, -560), (750, -450), (705, -330), (660, -215), (615, -110), (570, -30), (530, 8), (470, 20)], float)
+LADERA = np.array([(790, -560), (750, -450), (705, -330), (660, -215), (615, -110), (570, -30), (530, 8), (480, 45), (450, 95)], float)
 
 def camino(t):
     """Centro de la gota en el mundo (x, y), escala de la gota y 'racimo' (0 = gota, 1 = vapor disperso)."""
@@ -88,14 +88,14 @@ def camino(t):
     if t < T_PR + 0.6:                                  # condensación: el racimo vuelve a ser gota dentro de la nube
         return 600.0, Y_NUBE + 20*np.sin(t*1.3), 0.2, 1 - ss(T_CO + 0.6, T_CO + 2.0, t)
     if t < T_ES:                                        # precipitación: cae a la ladera
-        e = ss(T_PR + 0.6, T_PR + 2.4, t)**1.5
+        u = np.clip((t - T_PR - 0.6)/1.5, 0, 1); e = u*u               # gravedad: acelera hasta tocar la montaña
         return 600 + (ATERRIZA[0] - 600)*e, Y_NUBE + 60 + (ATERRIZA[1] - Y_NUBE - 60)*e, 0.2, 0.0
     if t < T_FIN:                                       # escorrentía: baja por la ladera al mar
         seg = np.cumsum(np.r_[0, np.hypot(*np.diff(LADERA, axis=0).T)])
-        s = ss(T_ES + 0.1, T_ES + 2.3, t)*seg[-1]
+        u = np.clip((t - T_ES - 0.1)/1.9, 0, 1); s = (u*u*(1.6 - 0.6*u))*seg[-1]     # arranca lento, toma velocidad, frena en el agua
         return float(np.interp(s, seg, LADERA[:, 0])), float(np.interp(s, seg, LADERA[:, 1])), 0.2, 0.0
     e = ss(T_FIN, T_FIN + E.REMATE_FORMA, t)            # remate: vuelve a ser la gota grande
-    return 470 + (540 - 470)*e, 20 + (-560 - 20)*e, 0.2 + 0.8*e, 0.0
+    return 450 + (540 - 450)*e, 95 + (-560 - 95)*e, 0.2 + 0.8*e, 0.0
 
 def camara(t):
     """La cámara sigue a la gota con suavidad (promedio de su altura en el último medio segundo)."""
