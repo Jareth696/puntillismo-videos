@@ -152,3 +152,9 @@ muy limpios (un objeto sobre fondo negro). El puntillismo se luce con **un objet
 ## Imágenes: las necesarias, y más si suman
 - Desde la PC se pueden bajar imágenes libres (Wikimedia Commons, NASA, Pixabay, Unsplash, Pexels) y ponerlas en la
   carpeta `src/` del video. Usar las que hagan falta para explicar; agregar elementos si dan dinamismo sin quitar atención.
+
+## Prioridad de zonas (aprobado con los finales)
+- **Las letras nunca van en las zonas que tapa la interfaz** (arriba de y=230, debajo de y=1500). Es lo más importante.
+- **Las imágenes, lo más arriba posible**, junto con las letras, para que lo principal se vea completo.
+- **La parte de abajo se puede usar para lo que no es esencial** de una imagen: p. ej. el pie del telescopio quedó
+  abajo, pero lo importante (la boca apuntando a Júpiter, arriba) se ve entero. Que se tape un poco no molesta.

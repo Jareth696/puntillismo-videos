@@ -73,6 +73,23 @@ Cada ficha dice: **qué es**, **cuándo usarlo**, **dónde está el código** y 
 - **Puntillismo B/N (por defecto):** naturaleza, espacio, ciencia, historia, personajes.
 - **Matrix verde (0 y 1):** solo temas digitales (tecnología, IA, datos). Código: `tesla/matrix_tesla.py`.
 
+## 7. Ideas de movimiento por probar (todavía sin código)
+
+Juegan con el plano y la cámara, como la hoja (distintos ángulos de un mismo plano). Al probar una, pasarla arriba.
+
+| Idea | Qué es | Sirve para |
+|---|---|---|
+| **Tarjeta que gira** | El plano gira en 3D como una carta; al darse vuelta aparece la imagen siguiente | Pasar de mito a realidad, de antes a después |
+| **Mesa que se inclina** | La imagen se acuesta y queda como un piso o mapa visto en perspectiva | Mapas, líneas de tiempo, territorios |
+| **Tela que se hunde** | El plano de puntos se curva como una tela bajo un objeto pesado | Gravedad, espacio-tiempo, órbitas |
+| **Túnel de planos** | La cámara avanza a través de planos en profundidad, cada uno con una fecha o imagen | Historia, evolución, eras (como el inicio de The Big Bang Theory) |
+| **Zoom infinito** | Se entra en un punto y adentro hay otra escala (galaxia → estrella → planeta → célula → átomo) | Escalas, "potencias de diez" |
+| **Despiece** | El objeto se separa en sus partes con etiquetas y vuelve a armarse | Máquinas, anatomía, átomos |
+| **Paralaje por capas** | Capas a distinta profundidad se mueven a distinta velocidad al moverse la cámara | Paisajes, profundidad, viajes |
+| **Campo de flujo** | Los puntos siguen líneas de un campo (viento, corrientes, imanes) | Clima, océanos, magnetismo, electricidad |
+| **Escáner de luz** | Una franja de luz recorre el objeto y revela su interior | Lo que no se ve: huesos, capas de la Tierra |
+| **Pliegue de papel** | El plano se dobla por la mitad y muestra otra cara | Comparaciones, revelaciones |
+
 ## Cómo proponer un video nuevo con la biblioteca
 
 1. Gancho: ¿qué cree la mayoría? (ver `GUIA_ESTILO.md`).
