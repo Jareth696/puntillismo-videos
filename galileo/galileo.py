@@ -149,14 +149,25 @@ GEO = estado([Cuerpo(TIERRA_P, 70),                                             
               Cuerpo(SOL, 95, R=400, periodo=7.0, fase=-0.6),                            # el Sol gira alrededor
               Cuerpo(disco_liso(900, 12), 22, R=240, periodo=4.2, fase=2.0)],           # un planeta
              inc=lambda t: 1 - 0.55*ss(*T_GEO_GIRA, t))
-HELIO_T = Cuerpo(TIERRA_P, 34, R=330, periodo=8.0, fase=0.8, brillo=1.25)
+# heliocéntrico: los 5 planetas que se ven a simple vista (+ Júpiter con sus 4 lunas, guiño a lo que vio Galileo)
+HELIO_T = Cuerpo(TIERRA_P, 30, R=290, periodo=9.0, fase=0.8, brillo=1.35)
 INC_HELIO = lambda t: 1 - 0.5*ss(T_HELIO + 1.6, T_HELIO + 6.0, t)
-HELIO = estado([Cuerpo(SOL, 150),
-                Cuerpo(anillo(900, 230, b=0.22), 1, plano=True), Cuerpo(anillo(1300, 330, b=0.28), 1, plano=True),
-                Cuerpo(anillo(1500, 450, b=0.22), 1, plano=True),
-                Cuerpo(disco_liso(700, 13), 16, R=230, periodo=4.6, fase=2.6),
-                HELIO_T,
-                Cuerpo(disco_liso(800, 14), 24, R=450, periodo=13.0, fase=4.2)], inc=INC_HELIO)
+ORBITAS = [(165, 3.6, 2.6, 9, 13), (225, 5.8, 4.4, 15, 15), (360, 14.0, 5.6, 12, 17), (470, 30.0, 3.4, 26, 18)]   # R, periodo, fase, tamaño, seed
+HELIO_J = Cuerpo(JUP[np.random.default_rng(7).choice(len(JUP), 1600, replace=False)], 26, R=470, periodo=30.0, fase=3.4)
+HELIO = estado([Cuerpo(SOL, 110)]
+               + [Cuerpo(anillo(int(R*3.2), R, b=0.2), 1, plano=True) for R in (165, 225, 290, 360, 470)]
+               + [Cuerpo(disco_liso(600, sd), tam, R=R, periodo=p, fase=f) for R, p, f, tam, sd in ORBITAS[:3]]
+               + [HELIO_T, HELIO_J], inc=INC_HELIO)
+class LunaDeJupiter(Cuerpo):
+    """Lunitas que siguen a Júpiter en su órbita (en el modelo heliocéntrico)."""
+    def __init__(self, k): super().__init__(disco_liso(120, 40 + k), 3.0, R=[38, 46, 55, 64][k], periodo=[1.6, 3.2, 6.4, 13][k], fase=k*1.7, achata=0.25)
+    def pos(self, t, inc=1.0):
+        self.centro = HELIO_J.pos(t, inc)[1]; return super().pos(t, inc)
+HELIO_LUNAS = [LunaDeJupiter(k) for k in range(4)]
+_helio_base = HELIO
+def HELIO(t):
+    Q = _helio_base(t); L = np.concatenate([c.pos(t, INC_HELIO(t))[0] for c in HELIO_LUNAS])
+    Q[-len(L):] = L; return Q
 
 # estatua + pergamino con el nombre (tapa el recorte de los pies)
 PERG_Y = 1600
@@ -184,8 +195,8 @@ TEL_W = np.c_[rotar(TELESC[:, :2], ANG)*TEL_ESC + TEL_C, TELESC[:, 2]*1.7]
 JUP_S = JUP[np.random.default_rng(5).choice(len(JUP), 17000, replace=False)]
 f = J_R/210
 GRUPO_J = [Cuerpo(JUP_S, J_R, centro=tuple(J_W))] + \
-          [Cuerpo(disco_liso(420, 20 + k), 13*f, R=R*f, periodo=p, fase=ph, achata=0.12, oculto_por=210*f, centro=tuple(J_W), brillo=1.2)
-           for k, (R, p, ph) in enumerate(((270, 2.4, 0.3), (335, 4.8, 2.2), (410, 9.6, 4.0), (490, 16.0, 5.3)))]
+          [Cuerpo(disco_liso(420, 20 + k), 13*f, R=R*f, periodo=p, fase=ph, achata=0.12, oculto_por=225*f, centro=tuple(J_W), brillo=1.6)
+           for k, (R, p, ph) in enumerate(((300, 8.0, 4.71), (365, 14.0, 2.29), (435, 26.0, 2.33), (505, 56.0, 3.6)))]
 _r = np.random.default_rng(6); N_J = sum(len(c.P) for c in GRUPO_J)
 SALE_D = _r.uniform(0, 1, N_J); SALE_CURVA = _r.normal(0, 1, N_J)*40
 Z_CERCA, Z_JUP = 1.7, 210/J_R
